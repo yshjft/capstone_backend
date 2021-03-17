@@ -8,6 +8,7 @@ const helmet = require('helmet')
 require('dotenv').config()
 
 const app = express()
+const api = require('./api')
 
 app.set('PORT', 5000)
 
@@ -33,6 +34,8 @@ app.use(
     }
   })
 )
+
+app.use('/api', api)
 
 app.use((req, res, next) => {
   const err = new Error()

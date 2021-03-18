@@ -5,10 +5,13 @@ const path = require('path')
 const morgan = require('morgan')
 const hpp = require('hpp')
 const helmet = require('helmet')
+const passport = require('passport')
+const {sequelize} = require('./models')
 require('dotenv').config()
 
 const app = express()
-const api = require('./api')
+const api = require('./routes')
+sequelize.sync({force: false})
 
 app.set('PORT', 5000)
 
@@ -20,6 +23,8 @@ if (process.env.NODE_ENV) {
   app.use(morgan('dev'))
 }
 app.use(express.static(path.join(path.join(__dirname, 'public'))))
+app.use(express.json())
+app.use(express.urlencoded({extended: false}))
 app.use(cookieParser(process.env.COOKIE_SECRET))
 app.use(
   session({

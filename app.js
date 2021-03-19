@@ -6,12 +6,15 @@ const morgan = require('morgan')
 const hpp = require('hpp')
 const helmet = require('helmet')
 const passport = require('passport')
-const {sequelize} = require('./models')
 require('dotenv').config()
 
-const app = express()
 const api = require('./routes')
+const {sequelize} = require('./models')
+const passportConfig = require('./passport')
+
+const app = express()
 sequelize.sync({force: false})
+passportConfig(passport)
 
 app.set('PORT', 5000)
 
@@ -39,6 +42,8 @@ app.use(
     }
   })
 )
+app.use(passport.initialize())
+app.use(passport.session())
 
 app.use('/api', api)
 

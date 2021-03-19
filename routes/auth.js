@@ -2,6 +2,8 @@ const express = require('express')
 const router = express.Router()
 const {User, sequelize} = require('../models')
 const bcrypt = require('bcryptjs')
+const passport = require('passport')
+const {isLoggedIn, isNotLoggedIn} = require('./middlewares')
 
 async function checkUnique(type, value) {
   let query = 'select users.id from users '
@@ -20,7 +22,7 @@ async function checkUnique(type, value) {
 }
 
 // join
-router.post('/join', async (req, res, next) => {
+router.post('/join', isNotLoggedIn, async (req, res, next) => {
   const {email, nickName, password} = req.body
 
   try {
@@ -40,6 +42,27 @@ router.post('/join', async (req, res, next) => {
   } catch (error) {
     return next(error)
   }
+})
+
+// login
+router.post('/login', isNotLoggedIn, async (req, res, next) => {
+  passport.authenticate('local', (authError, user, info) => {
+    if (authError) return next(authError)
+
+    if (!user) res.status(404).json({message: 'NOT FOUND'})
+
+    return req.logIn(user, (loginError) => {
+      if (loginError) return next(loginError)
+      return res.status(200).json({id: req.user.id, email: req.user.email})
+    })
+  })(req, res, next)
+})
+
+// logout
+router.get('/logout', isLoggedIn, (req, res, next) => {
+  req.logout()
+  req.session.destroy()
+  res.status(200).json({message: 'LOGOUT SUCCESS'})
 })
 
 module.exports = router

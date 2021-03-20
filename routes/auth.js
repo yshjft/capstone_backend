@@ -53,7 +53,7 @@ router.post('/login', isNotLoggedIn, async (req, res, next) => {
 
     return req.logIn(user, (loginError) => {
       if (loginError) return next(loginError)
-      return res.status(200).json({id: req.user.id, email: req.user.email})
+      return res.status(200).json({id: req.user.id, nickName: req.user.nickName, email: req.user.email})
     })
   })(req, res, next)
 })

@@ -49,7 +49,7 @@ router.post('/login', isNotLoggedIn, async (req, res, next) => {
   passport.authenticate('local', (authError, user, info) => {
     if (authError) return next(authError)
 
-    if (!user) res.status(404).json(info)
+    if (!user) return res.status(404).json(info)
 
     return req.logIn(user, (loginError) => {
       if (loginError) return next(loginError)
@@ -58,11 +58,20 @@ router.post('/login', isNotLoggedIn, async (req, res, next) => {
   })(req, res, next)
 })
 
+//check auth
+router.get('/authCheck', (req, res, next) => {
+  if (req.isAuthenticated()) {
+    res.json({isLoggedIn: true, id: req.user.id, nickName: req.user.nickName})
+  } else {
+    res.json({isLoggedIn: false, id: 0, nickName: ''})
+  }
+})
+
 // logout
 router.get('/logout', isLoggedIn, (req, res, next) => {
   req.logout()
   req.session.destroy()
-  res.status(200).json({message: 'LOGOUT SUCCESS'})
+  res.status(200).json({message: 'LOGOUT_SUCCESS'})
 })
 
 module.exports = router

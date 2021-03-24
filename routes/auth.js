@@ -38,7 +38,7 @@ router.post('/join', isNotLoggedIn, async (req, res, next) => {
       nickName,
       password: hash
     })
-    res.status(201).json({type: 'SUCCESS'})
+    res.status(201).json({type: 'JOIN_SUCCESS'})
   } catch (error) {
     return next(error)
   }

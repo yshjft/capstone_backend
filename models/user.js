@@ -19,7 +19,17 @@ module.exports = class User extends Sequelize.Model {
           allowNull: false
         }
       },
-      {sequelize, timestamps: true, tableName: 'users', charset: 'utf8', collate: 'utf8_general_ci'}
+      {
+        sequelize,
+        timestamps: true,
+        tableName: 'users',
+        charset: 'utf8',
+        collate: 'utf8_general_ci'
+      }
     )
+  }
+  static associate(db) {
+    db.User.hasMany(db.Post, {foreignKey: 'writer', sourceKey: 'id', onDelete: 'cascade'})
+    db.User.belongsToMany(db.Post, {foreignKey: 'userId', through: 'like', onDelete: 'cascade'})
   }
 }

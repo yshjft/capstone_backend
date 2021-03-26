@@ -12,6 +12,10 @@ module.exports = class Posts extends Sequelize.Model {
           type: Sequelize.STRING(30),
           allowNull: false
         },
+        public: {
+          type: Sequelize.BOOLEAN,
+          allowNull: false
+        },
         code: {
           type: Sequelize.TEXT,
           allowNull: false

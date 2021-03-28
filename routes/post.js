@@ -19,17 +19,20 @@ router.get('/', (req, res, next) => {
 
 // 알고리즘 기록
 router.post('/', isLoggedIn, async (req, res, next) => {
-  const {title, language, isPublic, code, memo} = req.body
+  const {title, language, public, code, memo} = req.body
   const {id} = req.user
 
   try {
     await Post.create({
       title,
       language,
-      public: isPublic,
+      public,
       code,
       memo,
       writer: id
+    })
+    res.status(201).json({
+      message: 'POST_SUCCESS'
     })
   } catch (error) {
     return next(error)

@@ -15,7 +15,6 @@ router.get('/', async (req, res, next) => {
            posts.id, 
            posts.title, 
            posts.language, 
-           posts.public, 
            posts.createdAt, 
            posts.updatedAt, 
            users.nickName as writer, 
@@ -23,6 +22,7 @@ router.get('/', async (req, res, next) => {
       from posts
       join users
       on posts.writer = users.id
+      where posts.public = true
       order by posts.createdAt
       limit ${start * perPage}, ${perPage}
     `)
@@ -32,6 +32,39 @@ router.get('/', async (req, res, next) => {
       auth: {...authCheckResult},
       data: posts,
       total: total[0].total
+    })
+  } catch (error) {
+    return next(error)
+  }
+})
+
+// 알고리즘 상세 조회
+router.get('/:id', async (req, res, nex) => {
+  const authCheckResult = authCheck(req)
+  const {id} = req.params
+
+  try {
+    const [post] = await sequelize.query(`
+      select 
+           posts.id, 
+           posts.title, 
+           posts.language, 
+           posts.public, 
+           posts.createdAt, 
+           posts.updatedAt, 
+           users.nickName as writer, 
+           (select count(postId) from likes where likes.postId = posts.id) as likeNum,
+           posts.code,
+           posts.memo
+      from posts
+      join users
+      on posts.writer = users.id
+      where posts.id = ${id}
+      order by posts.createdAt
+    `)
+    return res.status(200).json({
+      auth: {...authCheckResult},
+      data: post[0]
     })
   } catch (error) {
     return next(error)

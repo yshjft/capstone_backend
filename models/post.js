@@ -36,6 +36,6 @@ module.exports = class Posts extends Sequelize.Model {
   }
   static associate(db) {
     db.Post.belongsTo(db.User, {foreignKey: 'writer', targetKey: 'id'})
-    db.Post.belongsToMany(db.User, {foreignKey: 'postId', through: 'like', onDelete: 'cascade'})
+    db.Post.belongsToMany(db.User, {foreignKey: 'postId', through: 'likes', onDelete: 'cascade'})
   }
 }

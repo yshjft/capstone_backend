@@ -2,19 +2,40 @@ const express = require('express')
 const router = express.Router()
 const {isLoggedIn} = require('./middlewares')
 const authCheck = require('./lib/authCheck')
-const {Post} = require('../models')
+const {Post, sequelize} = require('../models')
 
 // 항상 auth check를 한다
-
 // 작성된 알고리즘 목록 보기
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
   const authCheckResult = authCheck(req)
+  const {start = 0, perPage = 10} = req.query
+  try {
+    const [posts] = await sequelize.query(`
+      select 
+           posts.id, 
+           posts.title, 
+           posts.language, 
+           posts.public, 
+           posts.createdAt, 
+           posts.updatedAt, 
+           users.nickName as writer, 
+           (select count(postId) from likes where likes.postId = posts.id) as likeNum
+      from posts
+      join users
+      on posts.writer = users.id
+      order by posts.createdAt
+      limit ${start * perPage}, ${perPage}
+    `)
+    const [total] = await sequelize.query(` select count(id) as total from posts`)
 
-  return res.status(200).json({
-    ...authCheckResult,
-    data: [],
-    total: 0
-  })
+    return res.status(200).json({
+      auth: {...authCheckResult},
+      data: posts,
+      total: total[0].total
+    })
+  } catch (error) {
+    return next(error)
+  }
 })
 
 // 알고리즘 기록

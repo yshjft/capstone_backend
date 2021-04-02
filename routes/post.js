@@ -5,7 +5,8 @@ const authCheck = require('./lib/authCheck')
 const {Post, sequelize} = require('../models')
 
 // 항상 auth check를 한다
-// 작성된 알고리즘 목록 보기
+
+// 게시물 목록 보기
 router.get('/', async (req, res, next) => {
   const authCheckResult = authCheck(req)
   const {start = 0, perPage = 10} = req.query
@@ -38,8 +39,7 @@ router.get('/', async (req, res, next) => {
   }
 })
 
-// 알고리즘 상세 조회
-// 사용자가 로그인 했을 경우 해당 게시물에 대해 좋아요를 눌렀는지 누르지 않았는지 알 수 있어야 한다.
+// 게시물 상세 조회
 router.get('/:id', async (req, res, nex) => {
   const authCheckResult = authCheck(req)
   const {id} = req.params
@@ -76,7 +76,7 @@ router.get('/:id', async (req, res, nex) => {
         from likes 
         where userId=${authCheckResult.id} and postId=${id}
       `)
-      resData.isLike = postUserLike.length === 0 ? false : true
+      resData.data.like = postUserLike.length === 0 ? false : true
     }
 
     return res.status(200).json(resData)
@@ -84,6 +84,38 @@ router.get('/:id', async (req, res, nex) => {
     return next(error)
   }
 })
+
+// 게시물 좋아요
+router.post('/like/:id', isLoggedIn, async (req, res, next) => {
+  const postId = req.params.id
+  const userId = req.user.id
+  const today = new Date()
+  const createdAt = `${today.getFullYear()}-${today.getMonth()}-${today.getDay()} ${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
+  try {
+    await sequelize.query(`
+      insert into likes (userId, postId, createdAt, updatedAt)
+      values ('${userId}', '${postId}', '${createdAt}', '${createdAt}')
+    `)
+
+    const [likeNum] = await sequelize.query(`
+      select
+        count(userId) as likeNum
+      from likes
+      where postId='${postId}'
+    `)
+
+    res.status(201).json({
+      message: 'POST_SUCCESS',
+      likeNum: likeNum[0].likeNum
+    })
+  } catch (error) {
+    return next(error)
+  }
+
+  console.log(createdAt)
+})
+
+// 게시물 좋아요 해제
 
 // 알고리즘 기록
 router.post('/', isLoggedIn, async (req, res, next) => {

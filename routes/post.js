@@ -11,13 +11,13 @@ router.get('/', async (req, res, next) => {
   const {start = 0, perPage = 10} = req.query
   try {
     const [posts] = await sequelize.query(`
-      select 
-           posts.id, 
-           posts.title, 
-           posts.language, 
-           posts.createdAt, 
-           posts.updatedAt, 
-           users.nickName as writer, 
+      select
+           posts.id,
+           posts.title,
+           posts.language,
+           posts.createdAt,
+           posts.updatedAt,
+           users.nickName as writer,
            (select count(postId) from likes where likes.postId = posts.id) as likeNum
       from posts
       join users
@@ -39,6 +39,7 @@ router.get('/', async (req, res, next) => {
 })
 
 // 알고리즘 상세 조회
+// 사용자가 로그인 했을 경우 해당 게시물에 대해 좋아요를 눌렀는지 누르지 않았는지 알 수 있어야 한다.
 router.get('/:id', async (req, res, nex) => {
   const authCheckResult = authCheck(req)
   const {id} = req.params
@@ -62,10 +63,23 @@ router.get('/:id', async (req, res, nex) => {
       where posts.id = ${id}
       order by posts.createdAt
     `)
-    return res.status(200).json({
+
+    let resData = {
       auth: {...authCheckResult},
       data: post[0]
-    })
+    }
+
+    if (authCheckResult.isLoggedIn) {
+      const [postUserLike] = await sequelize.query(`
+        select 
+          userId
+        from likes 
+        where userId=${authCheckResult.id} and postId=${id}
+      `)
+      resData.isLike = postUserLike.length === 0 ? false : true
+    }
+
+    return res.status(200).json(resData)
   } catch (error) {
     return next(error)
   }

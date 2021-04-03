@@ -24,7 +24,7 @@ router.get('/', async (req, res, next) => {
       join users
       on posts.writer = users.id
       where posts.public = true
-      order by posts.createdAt
+      order by posts.createdAt desc
       limit ${start * perPage}, ${perPage}
     `)
     const [total] = await sequelize.query(` select count(id) as total from posts`)
@@ -51,8 +51,9 @@ router.get('/:id', async (req, res, nex) => {
            posts.title, 
            posts.language, 
            posts.public, 
-           posts.createdAt, 
+           posts.createdAt,
            posts.updatedAt, 
+           users.id as writerId,
            users.nickName as writer, 
            (select count(postId) from likes where likes.postId = posts.id) as likeNum,
            posts.code,
@@ -85,12 +86,18 @@ router.get('/:id', async (req, res, nex) => {
   }
 })
 
+// 게시물 수정을 위한 조회 api
+router.get('/write/:id', isLoggedIn, async (req, res, next) => {})
+
 // 게시물 좋아요
 router.post('/like/:id', isLoggedIn, async (req, res, next) => {
   const postId = req.params.id
   const userId = req.user.id
   const today = new Date()
-  const createdAt = `${today.getFullYear()}-${today.getMonth()}-${today.getDay()} ${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
+  const createdAt = `${today.getFullYear()}-${
+    today.getMonth() + 1
+  }-${today.getDate()} ${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
+
   try {
     await sequelize.query(`
       insert into likes (userId, postId, createdAt, updatedAt)
@@ -111,11 +118,30 @@ router.post('/like/:id', isLoggedIn, async (req, res, next) => {
   } catch (error) {
     return next(error)
   }
-
-  console.log(createdAt)
 })
 
 // 게시물 좋아요 해제
+router.delete('/like/:id', isLoggedIn, async (req, res, next) => {
+  const postId = req.params.id
+  const userId = req.user.id
+
+  try {
+    await sequelize.query(`delete from likes where userId='${userId}' and postId='${postId}'`)
+    const [likeNum] = await sequelize.query(`
+      select
+        count(userId) as likeNum
+      from likes
+      where postId='${postId}'
+    `)
+
+    res.status(200).json({
+      message: 'DELETE_SUCCESS',
+      likeNum: likeNum[0].likeNum
+    })
+  } catch (error) {
+    return next(error)
+  }
+})
 
 // 알고리즘 기록
 router.post('/', isLoggedIn, async (req, res, next) => {

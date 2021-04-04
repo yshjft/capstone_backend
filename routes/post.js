@@ -2,9 +2,32 @@ const express = require('express')
 const router = express.Router()
 const {isLoggedIn} = require('./middlewares')
 const authCheck = require('./lib/authCheck')
+const getNow = require('./lib/getNow')
 const {Post, sequelize} = require('../models')
 
 // 항상 auth check를 한다
+
+// 게시물 작성
+router.post('/', isLoggedIn, async (req, res, next) => {
+  const {title, language, public, code, memo} = req.body
+  const {id} = req.user
+
+  try {
+    await Post.create({
+      title,
+      language,
+      public,
+      code,
+      memo,
+      writer: id
+    })
+    res.status(201).json({
+      message: 'POST_SUCCESS'
+    })
+  } catch (error) {
+    return next(error)
+  }
+})
 
 // 게시물 목록 보기
 router.get('/', async (req, res, next) => {
@@ -40,9 +63,10 @@ router.get('/', async (req, res, next) => {
 })
 
 // 게시물 상세 조회
-router.get('/:writer/:id', async (req, res, next) => {
+router.get('/:id', async (req, res, next) => {
   const authCheckResult = authCheck(req)
-  const {writer, id} = req.params
+  const {id} = req.params
+  const {writer} = req.query
 
   try {
     const [post] = await sequelize.query(`
@@ -62,7 +86,6 @@ router.get('/:writer/:id', async (req, res, next) => {
       join users
       on posts.writer = users.id
       where posts.id = ${id} and users.nickName='${writer}'
-      order by posts.createdAt
     `)
 
     if (post.length === 0) {
@@ -100,17 +123,64 @@ router.get('/:writer/:id', async (req, res, next) => {
   }
 })
 
-// 게시물 수정을 위한 조회 api
-router.get('/write/:id', isLoggedIn, async (req, res, next) => {})
+// 게시물 수정을 위한 게시물 상세 조회 api
+router.get('/edit/:id', isLoggedIn, async (req, res, next) => {
+  const postId = req.params.id
+  const {id} = req.user
+
+  try {
+    const [post] = await sequelize.query(`
+    select
+        posts.id,
+        posts.title,
+        posts.language,
+        posts.public,
+        posts.code,
+        posts.memo,
+        posts.writer
+    from posts
+    where posts.id=${postId} and posts.writer=${id}
+  `)
+
+    if (post.length === 0) {
+      return res.status(404).json({message: 'NOT FOUND'})
+    } else {
+      return res.status(200).json({data: post[0]})
+    }
+  } catch (error) {
+    return next(error)
+  }
+})
+
+// 게시물 수정
+router.put('/:id', isLoggedIn, async (req, res, next) => {
+  const postId = req.params.id
+  const {title, language, public, code, memo} = req.body
+  const updatedAt = getNow()
+  try {
+    await sequelize.query(`
+      update posts
+      set
+        title='${title}',
+        language='${language}',
+        public=${public},
+        code='${code}',
+        memo='${memo}',
+        updatedAt='${updatedAt}'
+      where id=${postId}
+    `)
+
+    res.status(200).json({message: 'UPDATE SUCCESS'})
+  } catch (error) {
+    return next(error)
+  }
+})
 
 // 게시물 좋아요
 router.post('/like/:id', isLoggedIn, async (req, res, next) => {
   const postId = req.params.id
   const userId = req.user.id
-  const today = new Date()
-  const createdAt = `${today.getFullYear()}-${
-    today.getMonth() + 1
-  }-${today.getDate()} ${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
+  const createdAt = getNow()
 
   try {
     await sequelize.query(`
@@ -151,28 +221,6 @@ router.delete('/like/:id', isLoggedIn, async (req, res, next) => {
     res.status(200).json({
       message: 'DELETE_SUCCESS',
       likeNum: likeNum[0].likeNum
-    })
-  } catch (error) {
-    return next(error)
-  }
-})
-
-// 알고리즘 기록
-router.post('/', isLoggedIn, async (req, res, next) => {
-  const {title, language, public, code, memo} = req.body
-  const {id} = req.user
-
-  try {
-    await Post.create({
-      title,
-      language,
-      public,
-      code,
-      memo,
-      writer: id
-    })
-    res.status(201).json({
-      message: 'POST_SUCCESS'
     })
   } catch (error) {
     return next(error)

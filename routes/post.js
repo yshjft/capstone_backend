@@ -40,9 +40,9 @@ router.get('/', async (req, res, next) => {
 })
 
 // 게시물 상세 조회
-router.get('/:id', async (req, res, nex) => {
+router.get('/:writer/:id', async (req, res, next) => {
   const authCheckResult = authCheck(req)
-  const {id} = req.params
+  const {writer, id} = req.params
 
   try {
     const [post] = await sequelize.query(`
@@ -61,9 +61,23 @@ router.get('/:id', async (req, res, nex) => {
       from posts
       join users
       on posts.writer = users.id
-      where posts.id = ${id}
+      where posts.id = ${id} and users.nickName='${writer}'
       order by posts.createdAt
     `)
+
+    if (post.length === 0) {
+      return res.status(404).json({
+        message: 'NOT_FOUND',
+        auth: {...authCheckResult}
+      })
+    }
+
+    if (authCheckResult.isLoggedIn && !post[0].public && post[0].writer !== authCheckResult.nickName) {
+      return res.status(404).json({message: 'NOT_FOUND', auth: {...authCheckResult}})
+    }
+    if (!authCheckResult.isLoggedIn && !post[0].public) {
+      return res.status(404).json({message: 'NOT_FOUND', auth: {...authCheckResult}})
+    }
 
     let resData = {
       auth: {...authCheckResult},

@@ -47,7 +47,7 @@ router.get('/', async (req, res, next) => {
       join users
       on posts.writer = users.id
       where posts.public = true
-      order by posts.createdAt desc
+      order by posts.createdAt desc, posts.updatedAt desc
       limit ${start * perPage}, ${perPage}
     `)
     const [total] = await sequelize.query(` select count(id) as total from posts`)
@@ -137,8 +137,10 @@ router.get('/edit/:id', isLoggedIn, async (req, res, next) => {
         posts.public,
         posts.code,
         posts.memo,
-        posts.writer
+        users.nickName as writer
     from posts
+    join users
+    on posts.writer = users.id
     where posts.id=${postId} and posts.writer=${id}
   `)
 
@@ -171,6 +173,29 @@ router.put('/:id', isLoggedIn, async (req, res, next) => {
     `)
 
     res.status(200).json({message: 'UPDATE SUCCESS'})
+  } catch (error) {
+    return next(error)
+  }
+})
+
+// 게시물 삭제
+router.delete('/:id', isLoggedIn, async (req, res, next) => {
+  const postId = req.params.id
+  const userId = req.user.id
+
+  try {
+    const [result] = await sequelize.query(`
+      delete from posts
+      where posts.id=${postId} and posts.writer=${userId} 
+    `)
+
+    if (result.affectedRows === 0) {
+      // 조건에 맞는 게시물 없음
+      // 혹시나 다른 사람이 삭제할 수 없게 하기 위해
+      res.status(404).json({message: 'NOT_FOUND'})
+    } else {
+      res.status(200).json({message: 'DELETE_SUCCESS', deletedPost: postId})
+    }
   } catch (error) {
     return next(error)
   }

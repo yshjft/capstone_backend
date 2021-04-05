@@ -21,7 +21,7 @@ async function checkUnique(type, value) {
   return users.length > 0 ? false : true
 }
 
-// join
+// 회원 가입
 router.post('/join', isNotLoggedIn, async (req, res, next) => {
   const {email, nickName, password} = req.body
 
@@ -44,7 +44,7 @@ router.post('/join', isNotLoggedIn, async (req, res, next) => {
   }
 })
 
-// login
+// 로그인
 router.post('/login', isNotLoggedIn, async (req, res, next) => {
   passport.authenticate('local', (authError, user, info) => {
     if (authError) return next(authError)
@@ -58,7 +58,7 @@ router.post('/login', isNotLoggedIn, async (req, res, next) => {
   })(req, res, next)
 })
 
-//check auth
+// auth check
 router.get('/authCheck', (req, res, next) => {
   if (req.isAuthenticated()) {
     res.json({isLoggedIn: true, id: req.user.id, nickName: req.user.nickName})
@@ -67,7 +67,7 @@ router.get('/authCheck', (req, res, next) => {
   }
 })
 
-// logout
+// 로그아웃
 router.get('/logout', isLoggedIn, (req, res, next) => {
   req.logout()
   req.session.destroy()

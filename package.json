@@ -2,10 +2,10 @@
   "name": "capstone-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "src/app.js",
   "scripts": {
-    "start": "cross-env NODE_ENV=production pm2 start app.js -i 0",
-    "dev": "nodemon node app.js"
+    "start": "cross-env NODE_ENV=production pm2 start src/app.js -i 0",
+    "dev": "nodemon node src/app.js"
   },
   "repository": {
     "type": "git",

@@ -186,7 +186,7 @@ router.delete('/:id', isLoggedIn, async (req, res, next) => {
   try {
     const [result] = await sequelize.query(`
       delete from posts
-      where posts.id=${postId} and posts.writer=${userId} 
+      where posts.id=${postId} and posts.writer=${userId}
     `)
 
     if (result.affectedRows === 0) {

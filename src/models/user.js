@@ -31,5 +31,7 @@ module.exports = class User extends Sequelize.Model {
   static associate(db) {
     db.User.hasMany(db.Post, {foreignKey: 'writer', sourceKey: 'id', onDelete: 'cascade'})
     db.User.belongsToMany(db.Post, {foreignKey: 'userId', through: 'likes', onDelete: 'cascade'})
+    db.User.belongsToMany(db.User, {foreignKey: 'followingId', as: 'followings', through: 'follows'})
+    db.User.belongsToMany(db.User, {foreignKey: 'followerId', as: 'followers', through: 'follows'})
   }
 }

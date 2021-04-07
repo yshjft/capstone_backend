@@ -47,7 +47,7 @@ router.get('/', async (req, res, next) => {
       join users
       on posts.writer = users.id
       where posts.public = true
-      order by posts.createdAt desc, posts.updatedAt desc
+      order by likeNum desc, posts.createdAt desc, posts.updatedAt desc
       limit ${start * perPage}, ${perPage}
     `)
     const [total] = await sequelize.query(` select count(id) as total from posts`)
@@ -130,19 +130,19 @@ router.get('/edit/:id', isLoggedIn, async (req, res, next) => {
 
   try {
     const [post] = await sequelize.query(`
-    select
-        posts.id,
-        posts.title,
-        posts.language,
-        posts.public,
-        posts.code,
-        posts.memo,
-        users.nickName as writer
-    from posts
-    join users
-    on posts.writer = users.id
-    where posts.id=${postId} and posts.writer=${id}
-  `)
+      select
+          posts.id,
+          posts.title,
+          posts.language,
+          posts.public,
+          posts.code,
+          posts.memo,
+          users.nickName as writer
+      from posts
+      join users
+      on posts.writer = users.id
+      where posts.id=${postId} and posts.writer=${id}
+    `)
 
     if (post.length === 0) {
       return res.status(404).json({message: 'NOT FOUND'})
@@ -158,19 +158,19 @@ router.get('/edit/:id', isLoggedIn, async (req, res, next) => {
 router.put('/:id', isLoggedIn, async (req, res, next) => {
   const postId = req.params.id
   const {title, language, public, code, memo} = req.body
-  const updatedAt = getNow()
   try {
-    await sequelize.query(`
-      update posts
-      set
-        title='${title}',
-        language='${language}',
-        public=${public},
-        code='${code}',
-        memo='${memo}',
-        updatedAt='${updatedAt}'
-      where id=${postId}
-    `)
+    await Post.update(
+      {
+        title,
+        language,
+        public,
+        code,
+        memo
+      },
+      {
+        where: {id: postId}
+      }
+    )
 
     res.status(200).json({message: 'UPDATE SUCCESS'})
   } catch (error) {

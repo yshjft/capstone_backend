@@ -19,6 +19,7 @@ router.get('/:nickName', async (req, res, next) => {
   }
 })
 
+// follow user
 router.post('/follow/:id', isLoggedIn, async (req, res, next) => {
   const followingId = req.params.id
   const followerId = req.user.id
@@ -26,7 +27,6 @@ router.post('/follow/:id', isLoggedIn, async (req, res, next) => {
 
   // 자기 자신 팔로우 못함(거의 일어날일 없음)
   // 혹시나 유저가 사라지면 어떻게 하지(?)
-
   try {
     await sequelize.query(`
       insert into follows (followingId, followerId, createdAt, updatedAt)
@@ -49,11 +49,25 @@ router.post('/follow/:id', isLoggedIn, async (req, res, next) => {
   }
 })
 
+// unfollow user
 router.delete('/follow/:id', isLoggedIn, async (req, res, next) => {
   const followingId = req.params.id
   const followerId = req.user.id
 
   try {
+    await sequelize.query(`delete from follows where followingId='${followingId}' and followerId='${followerId}'`)
+
+    const [followerNum] = await sequelize.query(`
+      select 
+        count(followerId) as followerNum
+       from follows
+       where followingId='${followingId}'
+    `)
+
+    res.status(200).json({
+      message: 'UNFOLLOW_SUCCESS',
+      followerNum: followerNum[0].followerNum
+    })
   } catch (error) {
     return next(error)
   }

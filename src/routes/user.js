@@ -5,15 +5,107 @@ const authCheck = require('./lib/authCheck')
 const getNow = require('./lib/getNow')
 const {sequelize} = require('../models')
 
-router.get('/:nickName', async (req, res, next) => {
+// 로그인 비로그인 접근 모두 가능
+router.get('/:id', async (req, res, next) => {
   const authCheckResult = authCheck(req)
+  const userId = req.params.id
+  const {year, tab, tabPage, perPage = 10} = req.query
+
   try {
-    const [user] = await sequelize.query(`
-        select id, nickName, email
-        from users
-        where nickName = '${req.params.nickName}'
+    const [userInfo] = await sequelize.query(`
+      select
+        users.id,
+        users.nickName,
+        users.email,
+        (select count(followingId) from follows where follows.followingId=${userId}) as followerNum,
+        (select count(posts.id) from posts join likes on posts.id = likes.postId where posts.writer=${userId}) as totalLike     
+      from users
+      where users.id=${userId}
     `)
-    res.status(200).json({...authCheckResult, info: user[0]})
+
+    const [postLog] = await sequelize.query(`
+      select
+        posts.createdAt
+      from posts
+      where posts.writer=${userId} and createdAt between '${year}-01-01' and '${year}-12-31'
+    `)
+
+    let resBody = {
+      auth: {...authCheckResult},
+      userInfo: userInfo[0],
+      postLog
+    }
+    switch (tab) {
+      case 'posts':
+        const [posts] = await sequelize.query(`
+         select
+           posts.id,
+           posts.public,
+           posts.title,
+           posts.language,
+           posts.createdAt,
+           posts.updatedAt,
+           (select count(postId) from likes where likes.postId = posts.id) as likeNum
+         from posts
+         where posts.writer=${userId} and posts.public=true
+         order by posts.createdAt desc, posts.updatedAt desc
+         limit ${tabPage * perPage}, ${perPage}
+        `)
+        const [postTotal] = await sequelize.query(`
+          select
+            count(posts.id) as total
+          from posts
+          where posts.writer=${userId} and posts.public=true
+        `)
+        resBody.posts = posts
+        resBody.total = postTotal[0].total
+        break
+      case 'likes':
+        const [likePosts] = await sequelize.query(`
+          select
+            posts.id,
+            posts.title,
+            posts.language,
+            posts.createdAt,
+            posts.updatedAt,
+            users.nickName as writer,
+            (select count(postId) from likes where likes.postId = posts.id) as likeNum
+          from posts
+                 join users on posts.writer=users.id
+                 join likes on posts.id=likes.postId
+          where likes.userId=${userId} and posts.public=true
+          limit ${tabPage * perPage}, ${perPage}
+        `)
+        const [likePostTotal] = await sequelize.query(
+          `select count(likes.userId) as total from likes where likes.userId=${userId}`
+        )
+        resBody.likePosts = likePosts
+        resBody.total = likePostTotal[0].total
+        break
+      case 'followings':
+        const [followingUsers] = await sequelize.query(`
+          select
+            users.id,
+            users.nickName,
+            users.email,
+            (select count(followingId) from follows where follows.followingId=users.id) as followerNum,
+            (select count(posts.id) from posts join likes on posts.id = likes.postId where posts.writer=users.id) as totalLike
+          from users
+          join follows on users.id=follows.followingId
+          where follows.followerId=${userId}
+          limit ${tabPage * perPage}, ${perPage}
+        `)
+        const [followingTotal] = await sequelize.query(
+          `select count(follows.followingId) as total from follows where follows.followerId=${userId}`
+        )
+        resBody.followingUsers = followingUsers
+        resBody.total = followingTotal[0].total
+        break
+      default:
+        break
+    }
+
+    res.status(200).json(resBody)
   } catch (error) {
     return next(error)
   }

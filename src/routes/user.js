@@ -48,6 +48,8 @@ router.get('/:nickName', async (req, res, next) => {
     }
     switch (tab) {
       case 'posts':
+        const {isLoggedIn} = authCheckResult
+        const condition = isLoggedIn ? `` : ` and posts.public=true`
         const [posts] = await sequelize.query(`
          select
            posts.id,
@@ -60,7 +62,7 @@ router.get('/:nickName', async (req, res, next) => {
            (select count(postId) from likes where likes.postId = posts.id) as likeNum
          from posts
          join users on users.id=posts.writer
-         where posts.writer=${userId} and posts.public=true
+         where posts.writer=${userId}${condition}
          order by posts.createdAt desc, posts.updatedAt desc
          limit ${tabPage * perPage}, ${perPage}
         `)
@@ -68,7 +70,7 @@ router.get('/:nickName', async (req, res, next) => {
           select
             count(posts.id) as total
           from posts
-          where posts.writer=${userId} and posts.public=true
+          where posts.writer=${userId}${condition}
         `)
         resBody.posts = posts
         resBody.total = postTotal[0].total

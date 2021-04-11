@@ -56,8 +56,10 @@ router.get('/:nickName', async (req, res, next) => {
            posts.language,
            posts.createdAt,
            posts.updatedAt,
+           users.nickName as writer,
            (select count(postId) from likes where likes.postId = posts.id) as likeNum
          from posts
+         join users on users.id=posts.writer
          where posts.writer=${userId} and posts.public=true
          order by posts.createdAt desc, posts.updatedAt desc
          limit ${tabPage * perPage}, ${perPage}

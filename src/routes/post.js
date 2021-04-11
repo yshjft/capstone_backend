@@ -50,7 +50,7 @@ router.get('/', async (req, res, next) => {
       order by likeNum desc, posts.createdAt desc, posts.updatedAt desc
       limit ${start * perPage}, ${perPage}
     `)
-    const [total] = await sequelize.query(` select count(id) as total from posts`)
+    const [total] = await sequelize.query(` select count(id) as total from posts where posts.public=false`)
 
     return res.status(200).json({
       auth: {...authCheckResult},

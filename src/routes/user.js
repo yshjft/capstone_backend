@@ -6,29 +6,40 @@ const getNow = require('./lib/getNow')
 const {sequelize} = require('../models')
 
 // 로그인 비로그인 접근 모두 가능
-router.get('/:id', async (req, res, next) => {
+router.get('/:nickName', async (req, res, next) => {
   const authCheckResult = authCheck(req)
-  const userId = req.params.id
+  const userNickName = req.params.nickName
   const {year, tab, tabPage, perPage = 10} = req.query
 
   try {
+    const [userIdList] = await sequelize.query(`select users.id from users where users.nickName='${userNickName}'`)
+    const userId = userIdList[0].id
+
     const [userInfo] = await sequelize.query(`
       select
         users.id,
         users.nickName,
         users.email,
         (select count(followingId) from follows where follows.followingId=${userId}) as followerNum,
-        (select count(posts.id) from posts join likes on posts.id = likes.postId where posts.writer=${userId}) as totalLike     
+        (select count(posts.id) from posts join likes on posts.id = likes.postId where posts.writer=${userId}) as totalLike,
+        users.createdAt     
       from users
       where users.id=${userId}
     `)
 
-    const [postLog] = await sequelize.query(`
+    const [allPostLog] = await sequelize.query(`
       select
         posts.createdAt
       from posts
-      where posts.writer=${userId} and createdAt between '${year}-01-01' and '${year}-12-31'
+      where posts.writer=${userId}
     `)
+
+    const lastPostCreatedAt = allPostLog[allPostLog.length - 1].createdAt
+    userInfo[0].lastPostCreatedAt = lastPostCreatedAt
+
+    const postLog = allPostLog.filter((postLog) => {
+      return new Date(postLog.createdAt).getFullYear() === Number(year)
+    })
 
     let resBody = {
       auth: {...authCheckResult},

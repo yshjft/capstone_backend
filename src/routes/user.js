@@ -14,6 +14,7 @@ router.get('/:nickName', async (req, res, next) => {
   try {
     const [userIdList] = await sequelize.query(`select users.id from users where users.nickName='${userNickName}'`)
     const userId = userIdList[0].id
+    const {isLoggedIn, id} = authCheckResult
 
     const [userInfo] = await sequelize.query(`
       select
@@ -46,9 +47,19 @@ router.get('/:nickName', async (req, res, next) => {
       userInfo: userInfo[0],
       postLog
     }
+
+    if (isLoggedIn) {
+      const [userFollow] = await sequelize.query(`
+        select
+          followerId
+        from follows
+        where followingId=${userId} and followerId=${id}
+      `)
+      resBody.userInfo.follow = userFollow.length === 0 ? false : true
+    }
+
     switch (tab) {
       case 'posts':
-        const {isLoggedIn} = authCheckResult
         const condition = isLoggedIn ? `` : ` and posts.public=true`
         const [posts] = await sequelize.query(`
          select
@@ -132,9 +143,14 @@ router.post('/follow/:id', isLoggedIn, async (req, res, next) => {
   const followerId = req.user.id
   const createdAt = getNow()
 
-  // 자기 자신 팔로우 못함(거의 일어날일 없음)
-  // 혹시나 유저가 사라지면 어떻게 하지(?)
   try {
+    // 자기 자신 팔로우 못함(거의 일어날일 없음)
+    if (followingId === followerId) return res.status(400).json({message: 'BAD_REQUEST'})
+
+    // 혹시나 유저가 사라지면 어떻게 하지(?)
+    const [exist] = await sequelize.query(`select id from users where users.id=${followingId}`)
+    if (exist.length === 0) return res.status(404).json({message: 'NOT_FOUND'})
+
     await sequelize.query(`
       insert into follows (followingId, followerId, createdAt, updatedAt)
       values ('${followingId}', '${followerId}', '${createdAt}', '${createdAt}')

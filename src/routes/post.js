@@ -83,8 +83,7 @@ router.get('/:id', async (req, res, next) => {
            posts.code,
            posts.memo
       from posts
-      join users
-      on posts.writer = users.id
+      join users on posts.writer = users.id
       where posts.id = ${id} and users.nickName='${writer}'
     `)
 
@@ -139,8 +138,7 @@ router.get('/edit/:id', isLoggedIn, async (req, res, next) => {
           posts.memo,
           users.nickName as writer
       from posts
-      join users
-      on posts.writer = users.id
+      join users on posts.writer = users.id
       where posts.id=${postId} and posts.writer=${id}
     `)
 

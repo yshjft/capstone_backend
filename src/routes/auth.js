@@ -53,7 +53,7 @@ router.post('/login', isNotLoggedIn, async (req, res, next) => {
 
     return req.logIn(user, (loginError) => {
       if (loginError) return next(loginError)
-      return res.status(200).json({id: req.user.id, nickName: req.user.nickName})
+      return res.status(200).json({id: req.user.id, nickName: req.user.nickName, email: req.user.email})
     })
   })(req, res, next)
 })
@@ -61,9 +61,9 @@ router.post('/login', isNotLoggedIn, async (req, res, next) => {
 // auth check
 router.get('/authCheck', (req, res, next) => {
   if (req.isAuthenticated()) {
-    res.json({isLoggedIn: true, id: req.user.id, nickName: req.user.nickName})
+    res.json({isLoggedIn: true, id: req.user.id, nickName: req.user.nickName, email: req.user.email})
   } else {
-    res.json({isLoggedIn: false, id: 0, nickName: ''})
+    res.json({isLoggedIn: false, id: 0, nickName: '', email: ''})
   }
 })
 

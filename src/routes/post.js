@@ -155,7 +155,7 @@ router.get('/edit/:id', isLoggedIn, async (req, res, next) => {
 // 게시물 수정
 router.put('/:id', isLoggedIn, async (req, res, next) => {
   const postId = req.params.id
-  const {title, language, public, code, memo} = req.bod
+  const {title, language, public, code, memo} = req.body
   try {
     await Post.update(
       {

@@ -74,4 +74,59 @@ router.get('/logout', isLoggedIn, (req, res, next) => {
   res.status(200).json({message: 'LOGOUT_SUCCESS'})
 })
 
+// 정보 수정 (nickName, email, password)
+router.put('/edit', isLoggedIn, async (req, res, next) => {
+  const userId = req.user.id
+  const {nickName, email, password} = req.body
+  const {editType} = req.query
+  let statusCode = 200
+  let resBody = {}
+
+  try {
+    switch (editType) {
+      case 'nickName':
+        if (nickName === req.user.nickName) {
+          statusCode = 200
+          resBody = {message: 'EDIT_NICKNAME_SUCCESS'}
+        } else if (!(await checkUnique('NICK_NAME', nickName))) {
+          statusCode = 409
+          resBody = {type: 'SAME_NICKNAME'}
+        } else {
+          await User.update({nickName}, {where: {id: userId}})
+          statusCode = 200
+          resBody = {message: 'EDIT_NICKNAME_SUCCESS', nickName}
+        }
+        break
+      case 'email':
+        if (email === req.user.email) {
+          statusCode = 200
+          resBody = {message: 'EDIT_EMAIL_SUCCESS'}
+        } else if (!(await checkUnique('EMAIL', email))) {
+          statusCode = 409
+          resBody = {type: 'SAME_EMAIL'}
+        } else {
+          await User.update({email}, {where: {id: userId}})
+          statusCode = 200
+          resBody = {message: 'EDIT_EMAIL_SUCCESS', email}
+        }
+        break
+      case 'password':
+        const hash = await bcrypt.hash(password, 14)
+        await User.update({password: hash}, {where: {id: userId}})
+        statusCode = 200
+        resBody = {message: 'EDIT_PASSWORD_SUCCESS'}
+        break
+      default:
+        statusCode = 200
+        resBody = {message: 'BAD_REQUEST'}
+        break
+    }
+    return res.status(statusCode).json(resBody)
+  } catch (error) {
+    return next(error)
+  }
+})
+
+// 탈퇴
+
 module.exports = router

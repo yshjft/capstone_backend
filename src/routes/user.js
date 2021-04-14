@@ -13,6 +13,9 @@ router.get('/:nickName', async (req, res, next) => {
 
   try {
     const [userIdList] = await sequelize.query(`select users.id from users where users.nickName='${userNickName}'`)
+
+    if (userIdList.length === 0) return res.status(404).json({message: 'NOT_FOUND'})
+
     const userId = userIdList[0].id
     const {isLoggedIn, id} = authCheckResult
 
@@ -35,7 +38,7 @@ router.get('/:nickName', async (req, res, next) => {
       where posts.writer=${userId}
     `)
 
-    const lastPostCreatedAt = allPostLog[allPostLog.length - 1].createdAt
+    const lastPostCreatedAt = allPostLog.length !== 0 ? allPostLog[allPostLog.length - 1].createdAt : ''
     userInfo[0].lastPostCreatedAt = lastPostCreatedAt
 
     const postLog = allPostLog.filter((postLog) => {

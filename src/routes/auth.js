@@ -75,53 +75,61 @@ router.get('/logout', isLoggedIn, (req, res, next) => {
 })
 
 // 정보 수정 (nickName, email, password)
+class Respond {
+  constructor(res, statusCode, resBody) {
+    this.res = res
+    this.statusCode = statusCode
+    this.resBody = resBody
+  }
+
+  setRes(statusCode, resBody) {
+    this.statusCode = statusCode
+    this.resBody = resBody
+  }
+
+  sendRes() {
+    this.res.status(this.statusCode).json(this.resBody)
+  }
+}
+
 router.put('/edit', isLoggedIn, async (req, res, next) => {
   const userId = req.user.id
   const {nickName, email, password} = req.body
   const {editType} = req.query
-  let statusCode = 200
-  let resBody = {}
+  const respond = new Respond(res, 200, {})
 
   try {
     switch (editType) {
       case 'nickName':
         if (nickName === req.user.nickName) {
-          statusCode = 200
-          resBody = {message: 'EDIT_NICKNAME_SUCCESS'}
+          respond.setRes(200, {message: 'EDIT_NICKNAME_SUCCESS'})
         } else if (!(await checkUnique('NICK_NAME', nickName))) {
-          statusCode = 409
-          resBody = {type: 'SAME_NICKNAME'}
+          respond.setRes(409, {type: 'SAME_NICKNAME'})
         } else {
           await User.update({nickName}, {where: {id: userId}})
-          statusCode = 200
-          resBody = {message: 'EDIT_NICKNAME_SUCCESS', nickName}
+          respond.setRes(200, {message: 'EDIT_NICKNAME_SUCCESS', nickName})
         }
         break
       case 'email':
         if (email === req.user.email) {
-          statusCode = 200
-          resBody = {message: 'EDIT_EMAIL_SUCCESS'}
+          respond.setRes(200, {message: 'EDIT_EMAIL_SUCCESS'})
         } else if (!(await checkUnique('EMAIL', email))) {
-          statusCode = 409
-          resBody = {type: 'SAME_EMAIL'}
+          respond.setRes(409, {type: 'SAME_EMAIL'})
         } else {
           await User.update({email}, {where: {id: userId}})
-          statusCode = 200
-          resBody = {message: 'EDIT_EMAIL_SUCCESS', email}
+          respond.setRes(200, {message: 'EDIT_EMAIL_SUCCESS', email})
         }
         break
       case 'password':
         const hash = await bcrypt.hash(password, 14)
         await User.update({password: hash}, {where: {id: userId}})
-        statusCode = 200
-        resBody = {message: 'EDIT_PASSWORD_SUCCESS'}
+        respond.setRes(200, {message: 'EDIT_PASSWORD_SUCCESS'})
         break
       default:
-        statusCode = 200
-        resBody = {message: 'BAD_REQUEST'}
+        respond.setRes(400, {message: 'BAD_REQUEST'})
         break
     }
-    return res.status(statusCode).json(resBody)
+    return respond.sendRes()
   } catch (error) {
     return next(error)
   }

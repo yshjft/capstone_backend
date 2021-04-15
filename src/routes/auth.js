@@ -136,5 +136,19 @@ router.put('/edit', isLoggedIn, async (req, res, next) => {
 })
 
 // 탈퇴
+router.delete('/quit', isLoggedIn, async (req, res, next) => {
+  const userId = req.user.id
+
+  try {
+    await sequelize.query(`
+      delete from users 
+      where users.id=${userId}
+    `)
+
+    return res.status(200).json({message: 'QUIT_SUCCESS'})
+  } catch (error) {
+    return next(error)
+  }
+})
 
 module.exports = router

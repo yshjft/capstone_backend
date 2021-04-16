@@ -10,6 +10,6 @@ exports.isNotLoggedIn = (req, res, next) => {
   if (!req.isAuthenticated()) {
     next()
   } else {
-    res.status(404).json({message: 'WRONG_REQUEST'})
+    res.status(400).json({message: 'BAD_REQUEST'})
   }
 }

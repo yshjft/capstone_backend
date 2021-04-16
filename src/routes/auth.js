@@ -3,7 +3,9 @@ const router = express.Router()
 const {User, sequelize} = require('../models')
 const bcrypt = require('bcryptjs')
 const passport = require('passport')
+const nodemailer = require('nodemailer')
 const {isLoggedIn, isNotLoggedIn} = require('./middlewares')
+const generatePassword = require('./lib/generatePassword')
 
 async function checkUnique(type, value) {
   let query = 'select users.id from users '
@@ -58,6 +60,13 @@ router.post('/login', isNotLoggedIn, async (req, res, next) => {
   })(req, res, next)
 })
 
+// 로그아웃
+router.get('/logout', isLoggedIn, (req, res, next) => {
+  req.logout()
+  req.session.destroy()
+  res.status(200).json({message: 'LOGOUT_SUCCESS'})
+})
+
 // auth check
 router.get('/authCheck', (req, res, next) => {
   if (req.isAuthenticated()) {
@@ -67,11 +76,50 @@ router.get('/authCheck', (req, res, next) => {
   }
 })
 
-// 로그아웃
-router.get('/logout', isLoggedIn, (req, res, next) => {
-  req.logout()
-  req.session.destroy()
-  res.status(200).json({message: 'LOGOUT_SUCCESS'})
+// 비밀번호 찾기
+router.get('/searchPassword', isNotLoggedIn, async (req, res, next) => {
+  const {email} = req.body
+
+  try {
+    const [existUser] = await sequelize.query(`select id, nickName from users where users.email='${email}'`)
+
+    if (existUser.length === 0) {
+      return res.status(404).json({message: 'NOT_FOUND'})
+    } else {
+      const password = generatePassword()
+
+      const hash = await bcrypt.hash(password, 14)
+      await User.update({password: hash}, {where: {email}})
+
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.NODEMAILER_USER,
+          pass: process.env.NODEMAILER_PASSWORD
+        }
+      })
+
+      await transporter.sendMail({
+        from: `${process.env.NODEMAILER_USER}`,
+        to: email,
+        subject: 'AlgoHub 비밀번호 찾기',
+        html: `
+          <div>
+            <h1>AlgoHub 비밀번호 찾기</h1>
+            <h2>안녕하세요 ${existUser[0].nickName}님! 제공된 비밀번호로 로그인 후 설정에서 반드시 비밀번호를 변경하세요</h2>
+            <h4>비밀 번호: ${password}</h4>
+          </div>
+        `
+      })
+
+      return res.status(200).json({message: 'EMAIL_SEND_SUCCESS'})
+    }
+  } catch (error) {
+    return next(error)
+  }
 })
 
 // 정보 수정 (nickName, email, password)

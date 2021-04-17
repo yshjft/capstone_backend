@@ -1,0 +1,17 @@
+type: object
+properties:
+  year:
+    type: string
+  tab:
+    type: string
+    enum:
+    - posts
+    - likes
+    - followings
+  tabPage:
+    type: string
+required:
+- year
+- tab
+- tabPage
+additionalProperties: false

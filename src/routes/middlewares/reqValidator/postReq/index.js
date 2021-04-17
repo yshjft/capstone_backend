@@ -1,8 +1,6 @@
 const path = require('path')
 const Ajv = require('ajv')
 const ajv = new Ajv()
-const addFormats = require('ajv-formats')
-addFormats(ajv, ['email'])
 const makeValidator = require('../makeValidator')
 
 exports.writeReqValidator = (req, res, next) => {
@@ -31,9 +29,14 @@ exports.readDetailReqValidator = (req, res, next) => {
 }
 
 exports.paramsIdValidator = (req, res, next) => {
-  const paramsValidate = makeValidator(path.join(__dirname, 'postId.yml'))
-  if (!paramsValidate(req.params)) next(new Error(ajv.errorsText(paramsValidate.errors)))
-  else next()
+  try {
+    const validate = makeValidator(path.join(__dirname, 'postId.yml'))
+
+    if (!validate(req.params)) next(new Error(ajv.errorsText(paramsValidate.errors)))
+    else next()
+  } catch (error) {
+    next(error)
+  }
 }
 
 exports.editReqValidator = (req, res, next) => {

@@ -1,0 +1,7 @@
+type: object
+properties:
+  nickName:
+    type: string
+required:
+- nickName
+additionalProperties: false

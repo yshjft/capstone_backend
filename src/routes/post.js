@@ -11,7 +11,6 @@ const {
   editReqValidator
 } = require('./middlewares/reqValidator/postReq')
 
-// 항상 auth check를 한다
 // 게시물 작성
 router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
   const {title, language, public, code, memo} = req.body

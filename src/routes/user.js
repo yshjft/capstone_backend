@@ -1,12 +1,13 @@
 const express = require('express')
 const router = express.Router()
 const {isLoggedIn} = require('./middlewares/loggedInOrNotLoggedIn')
+const {userReqValidator, paramsIdValidator} = require('./middlewares/reqValidator/userReq')
 const authCheck = require('./lib/authCheck')
 const getNow = require('./lib/getNow')
 const {sequelize} = require('../models')
 
 // 로그인 비로그인 접근 모두 가능
-router.get('/:nickName', async (req, res, next) => {
+router.get('/:nickName', userReqValidator, async (req, res, next) => {
   const authCheckResult = authCheck(req)
   const userNickName = req.params.nickName
   const {year, tab, tabPage, perPage = 10} = req.query
@@ -141,7 +142,7 @@ router.get('/:nickName', async (req, res, next) => {
 })
 
 // follow user
-router.post('/follow/:id', isLoggedIn, async (req, res, next) => {
+router.post('/follow/:id', isLoggedIn, paramsIdValidator, async (req, res, next) => {
   const followingId = req.params.id
   const followerId = req.user.id
   const createdAt = getNow()
@@ -176,7 +177,7 @@ router.post('/follow/:id', isLoggedIn, async (req, res, next) => {
 })
 
 // unfollow user
-router.delete('/follow/:id', isLoggedIn, async (req, res, next) => {
+router.delete('/follow/:id', isLoggedIn, paramsIdValidator, async (req, res, next) => {
   const followingId = req.params.id
   const followerId = req.user.id
 

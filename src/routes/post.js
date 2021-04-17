@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const {isLoggedIn} = require('./middlewares')
+const {isLoggedIn} = require('./middlewares/loggedInOrNotLoggedIn')
 const authCheck = require('./lib/authCheck')
 const getNow = require('./lib/getNow')
 const {Post, sequelize} = require('../models')

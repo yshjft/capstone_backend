@@ -1,0 +1,8 @@
+type: object
+properties:
+  password:
+    type: string
+    minLength: 6
+required:
+- password
+additionalProperties: false

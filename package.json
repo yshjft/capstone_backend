@@ -18,6 +18,8 @@
   },
   "homepage": "https://github.com/yshjft/capstone_backend#readme",
   "dependencies": {
+    "ajv": "^8.1.0",
+    "ajv-formats": "^2.0.2",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.5",
     "cross-env": "^7.0.3",
@@ -26,6 +28,7 @@
     "express-session": "^1.17.1",
     "helmet": "^4.4.1",
     "hpp": "^0.2.3",
+    "js-yaml": "^4.1.0",
     "morgan": "^1.10.0",
     "mysql2": "^2.2.5",
     "nodemailer": "^6.5.0",

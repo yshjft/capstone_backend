@@ -4,7 +4,13 @@ const {User, sequelize} = require('../models')
 const bcrypt = require('bcryptjs')
 const passport = require('passport')
 const nodemailer = require('nodemailer')
-const {isLoggedIn, isNotLoggedIn} = require('./middlewares')
+const {isLoggedIn, isNotLoggedIn} = require('./middlewares/loggedInOrNotLoggedIn')
+const {
+  joinReqValidator,
+  logInReqValidator,
+  searchPasswordReqValidator,
+  infoEditReqValidator
+} = require('./middlewares/reqValidator/authReq')
 const generatePassword = require('./lib/generatePassword')
 
 async function checkUnique(type, value) {
@@ -24,9 +30,9 @@ async function checkUnique(type, value) {
 }
 
 // 회원 가입
-router.post('/join', isNotLoggedIn, async (req, res, next) => {
+router.post('/join', isNotLoggedIn, joinReqValidator, async (req, res, next) => {
   const {email, nickName, password} = req.body
-
+  console.log(email, nickName, password)
   try {
     let isUnique = await checkUnique('EMAIL', email)
     if (!isUnique) res.status(409).json({type: 'SAME_EMAIL'})
@@ -47,7 +53,7 @@ router.post('/join', isNotLoggedIn, async (req, res, next) => {
 })
 
 // 로그인
-router.post('/login', isNotLoggedIn, async (req, res, next) => {
+router.post('/login', isNotLoggedIn, logInReqValidator, async (req, res, next) => {
   passport.authenticate('local', (authError, user, info) => {
     if (authError) return next(authError)
 
@@ -77,7 +83,7 @@ router.get('/authCheck', (req, res, next) => {
 })
 
 // 비밀번호 찾기
-router.get('/searchPassword', isNotLoggedIn, async (req, res, next) => {
+router.get('/searchPassword', isNotLoggedIn, searchPasswordReqValidator, async (req, res, next) => {
   const {email} = req.query
 
   try {
@@ -140,7 +146,7 @@ class Respond {
   }
 }
 
-router.put('/edit', isLoggedIn, async (req, res, next) => {
+router.put('/edit', isLoggedIn, infoEditReqValidator, async (req, res, next) => {
   const userId = req.user.id
   const {nickName, email, password} = req.body
   const {editType} = req.query

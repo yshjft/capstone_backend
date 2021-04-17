@@ -1,0 +1,9 @@
+type: object
+properties:
+  nickName:
+    type: string
+    minLength: 1
+    maxLength: 10
+required:
+- nickName
+additionalProperties: false

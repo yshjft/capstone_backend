@@ -1,0 +1,11 @@
+type: object
+properties:
+  editType:
+    type: string
+    enum:
+    - 'nickName'
+    - 'email'
+    - 'password'
+required:
+- editType
+additionalProperties: false

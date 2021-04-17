@@ -1,0 +1,7 @@
+type: object
+properties:
+  writer:
+    type: string
+required:
+- writer
+additionalProperties: false

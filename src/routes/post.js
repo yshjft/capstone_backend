@@ -4,11 +4,16 @@ const {isLoggedIn} = require('./middlewares/loggedInOrNotLoggedIn')
 const authCheck = require('./lib/authCheck')
 const getNow = require('./lib/getNow')
 const {Post, sequelize} = require('../models')
+const {
+  writeReqValidator,
+  readDetailReqValidator,
+  paramsIdValidator,
+  editReqValidator
+} = require('./middlewares/reqValidator/postReq')
 
 // 항상 auth check를 한다
-
 // 게시물 작성
-router.post('/', isLoggedIn, async (req, res, next) => {
+router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
   const {title, language, public, code, memo} = req.body
   const {id} = req.user
 
@@ -63,7 +68,7 @@ router.get('/', async (req, res, next) => {
 })
 
 // 게시물 상세 조회
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', readDetailReqValidator, async (req, res, next) => {
   const authCheckResult = authCheck(req)
   const {id} = req.params
   const {writer} = req.query
@@ -123,7 +128,7 @@ router.get('/:id', async (req, res, next) => {
 })
 
 // 게시물 수정을 위한 게시물 상세 조회 api
-router.get('/edit/:id', isLoggedIn, async (req, res, next) => {
+router.get('/edit/:id', isLoggedIn, paramsIdValidator, async (req, res, next) => {
   const postId = req.params.id
   const {id} = req.user
 
@@ -153,9 +158,10 @@ router.get('/edit/:id', isLoggedIn, async (req, res, next) => {
 })
 
 // 게시물 수정
-router.put('/:id', isLoggedIn, async (req, res, next) => {
+router.put('/:id', isLoggedIn, editReqValidator, async (req, res, next) => {
   const postId = req.params.id
   const {title, language, public, code, memo} = req.body
+
   try {
     await Post.update(
       {
@@ -165,9 +171,7 @@ router.put('/:id', isLoggedIn, async (req, res, next) => {
         code,
         memo
       },
-      {
-        where: {id: postId}
-      }
+      {where: {id: postId}}
     )
 
     res.status(200).json({message: 'UPDATE SUCCESS'})
@@ -177,7 +181,7 @@ router.put('/:id', isLoggedIn, async (req, res, next) => {
 })
 
 // 게시물 삭제
-router.delete('/:id', isLoggedIn, async (req, res, next) => {
+router.delete('/:id', isLoggedIn, paramsIdValidator, async (req, res, next) => {
   const postId = req.params.id
   const userId = req.user.id
 
@@ -200,7 +204,7 @@ router.delete('/:id', isLoggedIn, async (req, res, next) => {
 })
 
 // 게시물 좋아요
-router.post('/like/:id', isLoggedIn, async (req, res, next) => {
+router.post('/like/:id', isLoggedIn, paramsIdValidator, async (req, res, next) => {
   const postId = req.params.id
   const userId = req.user.id
   const createdAt = getNow()
@@ -228,7 +232,7 @@ router.post('/like/:id', isLoggedIn, async (req, res, next) => {
 })
 
 // 게시물 좋아요 해제
-router.delete('/like/:id', isLoggedIn, async (req, res, next) => {
+router.delete('/like/:id', isLoggedIn, paramsIdValidator, async (req, res, next) => {
   const postId = req.params.id
   const userId = req.user.id
 

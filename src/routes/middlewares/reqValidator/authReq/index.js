@@ -1,19 +1,13 @@
-const yaml = require('js-yaml')
-const fs = require('fs')
 const path = require('path')
 const Ajv = require('ajv')
-const addFormats = require('ajv-formats')
 const ajv = new Ajv()
+const addFormats = require('ajv-formats')
 addFormats(ajv, ['email'])
-
-const makeValidator = (file) => {
-  const object = yaml.load(fs.readFileSync(path.join(__dirname, file), 'utf8'))
-  return ajv.compile(object)
-}
+const makeValidator = require('../makeValidator')
 
 exports.joinReqValidator = (req, res, next) => {
   try {
-    const validate = makeValidator('join.yml')
+    const validate = makeValidator(path.join(__dirname, 'join.yml'))
 
     if (validate(req.body)) next()
     else next(new Error(ajv.errorsText(validate.errors)))
@@ -24,7 +18,7 @@ exports.joinReqValidator = (req, res, next) => {
 
 exports.logInReqValidator = (req, res, next) => {
   try {
-    const validate = makeValidator('login.yml')
+    const validate = makeValidator(path.join(__dirname, 'login.yml'))
 
     if (validate(req.body)) next()
     else next(new Error(ajv.errorsText(validate.errors)))
@@ -35,7 +29,7 @@ exports.logInReqValidator = (req, res, next) => {
 
 exports.searchPasswordReqValidator = (req, res, next) => {
   try {
-    const validate = makeValidator('searchPassword.yml')
+    const validate = makeValidator(path.join(__dirname, 'searchPassword.yml'))
 
     if (validate(req.query)) next()
     else next(new Error(ajv.errorsText(validate.errors)))
@@ -46,14 +40,17 @@ exports.searchPasswordReqValidator = (req, res, next) => {
 
 exports.infoEditReqValidator = (req, res, next) => {
   try {
-    const queryValidate = makeValidator('editType.yml')
-    if (!queryValidate(req.query)) next(new Error(ajv.errorsText(queryValidate.errors)))
+    const queryValidate = makeValidator(path.join(__dirname, 'editType.yml'))
+    if (!queryValidate(req.query)) return next(new Error(ajv.errorsText(queryValidate.errors)))
 
     const {editType} = req.query
     const bodyValidate = makeValidator(
-      editType === 'nickName' ? 'editNickName.yml' : editType === 'email' ? 'editEmail.yml' : 'editPwd.yml'
+      path.join(
+        __dirname,
+        editType === 'nickName' ? 'editNickName.yml' : editType === 'email' ? 'editEmail.yml' : 'editPwd.yml'
+      )
     )
-    if (!bodyValidate(req.body)) next(new Error(ajv.errorsText(bodyValidate.errors)))
+    if (!bodyValidate(req.body)) return next(new Error(ajv.errorsText(bodyValidate.errors)))
 
     next()
   } catch (error) {

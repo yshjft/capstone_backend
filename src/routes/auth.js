@@ -78,7 +78,7 @@ router.get('/authCheck', (req, res, next) => {
 
 // 비밀번호 찾기
 router.get('/searchPassword', isNotLoggedIn, async (req, res, next) => {
-  const {email} = req.body
+  const {email} = req.query
 
   try {
     const [existUser] = await sequelize.query(`select id, nickName from users where users.email='${email}'`)

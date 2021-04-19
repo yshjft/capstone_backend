@@ -1,0 +1,7 @@
+type: object
+properties:
+  start:
+    type: string
+required:
+  - start
+additionalProperties: false

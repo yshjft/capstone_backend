@@ -8,7 +8,8 @@ const {
   writeReqValidator,
   readDetailReqValidator,
   paramsIdValidator,
-  editReqValidator
+  editReqValidator,
+  readListReqValidator
 } = require('./middlewares/reqValidator/postReq')
 
 // 게시물 작성
@@ -34,9 +35,10 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
 })
 
 // 게시물 목록 보기
-router.get('/', async (req, res, next) => {
+router.get('/', readListReqValidator, async (req, res, next) => {
   const authCheckResult = authCheck(req)
-  const {start = 0, perPage = 10} = req.query
+  const {start} = req.query
+
   try {
     const [posts] = await sequelize.query(`
       select
@@ -52,7 +54,7 @@ router.get('/', async (req, res, next) => {
       on posts.writer = users.id
       where posts.public = true
       order by likeNum desc, posts.createdAt desc, posts.updatedAt desc
-      limit ${start * perPage}, ${perPage}
+      limit ${start * 10}, 10
     `)
     const [total] = await sequelize.query(` select count(id) as total from posts where posts.public=true`)
 

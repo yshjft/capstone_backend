@@ -10,7 +10,7 @@ const {sequelize} = require('../models')
 router.get('/:nickName', userReqValidator, async (req, res, next) => {
   const authCheckResult = authCheck(req)
   const userNickName = req.params.nickName
-  const {year, tab, tabPage, perPage = 10} = req.query
+  const {year, tab, tabPage} = req.query
 
   try {
     const [userIdList] = await sequelize.query(`select users.id from users where users.nickName='${userNickName}'`)
@@ -79,7 +79,7 @@ router.get('/:nickName', userReqValidator, async (req, res, next) => {
          join users on users.id=posts.writer
          where posts.writer=${userId}${condition}
          order by posts.createdAt desc, posts.updatedAt desc
-         limit ${tabPage * perPage}, ${perPage}
+         limit ${tabPage * 10}, ${10}
         `)
         const [postTotal] = await sequelize.query(`
           select
@@ -104,7 +104,7 @@ router.get('/:nickName', userReqValidator, async (req, res, next) => {
                  join users on posts.writer=users.id
                  join likes on posts.id=likes.postId
           where likes.userId=${userId} and posts.public=true
-          limit ${tabPage * perPage}, ${perPage}
+          limit ${tabPage * 10}, 10
         `)
         const [likePostTotal] = await sequelize.query(
           `select count(likes.userId) as total from likes where likes.userId=${userId}`
@@ -123,7 +123,7 @@ router.get('/:nickName', userReqValidator, async (req, res, next) => {
           from users
           join follows on users.id=follows.followingId
           where follows.followerId=${userId}
-          limit ${tabPage * perPage}, ${perPage}
+          limit ${tabPage * 10}, 10
         `)
         const [followingTotal] = await sequelize.query(
           `select count(follows.followingId) as total from follows where follows.followerId=${userId}`

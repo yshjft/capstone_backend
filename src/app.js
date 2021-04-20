@@ -6,6 +6,8 @@ const morgan = require('morgan')
 const hpp = require('hpp')
 const helmet = require('helmet')
 const passport = require('passport')
+const RedisStore = require('connect-redis')(session)
+const redis = require('redis')
 require('dotenv').config()
 
 const api = require('./routes')
@@ -29,22 +31,27 @@ app.use(express.static(path.join(path.join(__dirname, 'public'))))
 app.use(express.json())
 app.use(express.urlencoded({extended: false}))
 app.use(cookieParser(process.env.COOKIE_SECRET))
-app.use(
-  session({
-    resave: false,
-    saveUninitialized: false,
-    secret: process.env.COOKIE_SECRET,
-    proxy: true,
-    cookie: {
-      httpOnly: true,
-      secure: false,
-      maxAge: 5000 * 60 * 60
-    }
-  })
-)
+const client = redis.createClient({
+  host: process.env.REDIS_HOST,
+  port: process.env.REDIS_PORT,
+  password: process.env.REDIS_PASSWORD,
+  loggErrors: true
+})
+const sessionOption = {
+  resave: false,
+  saveUninitialized: false,
+  secret: process.env.COOKIE_SECRET,
+  proxy: true,
+  cookie: {
+    httpOnly: true,
+    secure: false,
+    maxAge: 5000 * 60 * 60
+  },
+  store: new RedisStore({client: client})
+}
+app.use(session(sessionOption))
 app.use(passport.initialize())
 app.use(passport.session())
-
 app.use('/api', api)
 
 app.use((req, res, next) => {

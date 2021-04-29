@@ -19,14 +19,13 @@ module.exports = {
     username: 'root',
     password: process.env.SEQUELIZE_PASSWORD,
     database: 'AlgoHub',
-    host: '127.0.0.1',
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
     dialectOptions: {
       charset: 'utf8mb4',
       dateStrings: true,
       typeCast: true
     },
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
     dialect: 'mysql',
     timezone: '+09:00',
     operatorAliases: 'false',

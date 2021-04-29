@@ -18,7 +18,7 @@ module.exports = {
   production: {
     username: 'root',
     password: process.env.SEQUELIZE_PASSWORD,
-    database: 'SIMPLE_CRUD',
+    database: 'AlgoHub',
     host: '127.0.0.1',
     dialectOptions: {
       charset: 'utf8mb4',

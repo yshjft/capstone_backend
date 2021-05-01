@@ -1,5 +1,6 @@
 const express = require('express')
 const router = express.Router()
+const elasticsearch = require('elasticsearch')
 const {isLoggedIn} = require('./middlewares/loggedInOrNotLoggedIn')
 const authCheck = require('./lib/authCheck')
 const getNow = require('./lib/getNow')
@@ -12,13 +13,24 @@ const {
   readListReqValidator
 } = require('./middlewares/reqValidator/postReq')
 
+const esClient = new elasticsearch.Client({
+  hosts: ['http://localhost:9200']
+})
+
 // 게시물 작성
 router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
   const {title, language, public, code, memo} = req.body
   const {id} = req.user
 
   try {
-    await Post.create({
+    await esClient.ping({requestTimeout: 30000})
+    const isIndexExist = await esClient.indices.exists({index: 'post-index'})
+
+    if (!isIndexExist) {
+      await esClient.indices.create({index: 'post-index'})
+    }
+
+    const result = await Post.create({
       title,
       language,
       public,
@@ -26,6 +38,8 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
       memo,
       writer: id
     })
+    console.log('id = ', result.dataValues.id)
+
     res.status(201).json({
       message: 'POST_SUCCESS'
     })

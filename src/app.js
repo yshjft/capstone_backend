@@ -8,18 +8,17 @@ const helmet = require('helmet')
 const passport = require('passport')
 const RedisStore = require('connect-redis')(session)
 const redis = require('redis')
+const {sequelize} = require('./models')
+const passportConfig = require('./passport')
 require('dotenv').config()
 
 const api = require('./routes')
-const {sequelize} = require('./models')
-const passportConfig = require('./passport')
 
 const app = express()
 sequelize.sync({force: false})
 passportConfig(passport)
 
 app.set('PORT', 5000)
-
 if (process.env.NODE_ENV) {
   app.use(morgan('combined'))
   app.use(hpp())
@@ -52,6 +51,7 @@ const sessionOption = {
 app.use(session(sessionOption))
 app.use(passport.initialize())
 app.use(passport.session())
+
 app.use('/api', api)
 
 app.use((req, res, next) => {

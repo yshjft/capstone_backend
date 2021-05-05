@@ -43,6 +43,7 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
               tokenizer: {
                 nori_t_mixed: {
                   type: 'nori_tokenizer',
+                  user_dictionary_rules: ['백트래킹'],
                   decompound_mode: 'mixed'
                 }
               },
@@ -100,7 +101,18 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
       memo,
       writer: id
     })
-    console.log('id = ', result.dataValues.id)
+    const dbId = result.dataValues.id
+    console.log('id = ', dbId)
+
+    // _doc 생성
+    await esClient.create({
+      id: dbId,
+      index: 'post-index',
+      body: {
+        title: title,
+        memo: memo
+      }
+    })
 
     res.status(201).json({
       message: 'POST_SUCCESS'

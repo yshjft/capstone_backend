@@ -19,6 +19,7 @@ sequelize.sync({force: false})
 passportConfig(passport)
 
 app.set('PORT', 5000)
+
 if (process.env.NODE_ENV) {
   app.use(morgan('combined'))
   app.use(hpp())

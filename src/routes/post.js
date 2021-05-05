@@ -27,7 +27,69 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
     const isIndexExist = await esClient.indices.exists({index: 'post-index'})
 
     if (!isIndexExist) {
-      await esClient.indices.create({index: 'post-index'})
+      await esClient.indices.create({
+        index: 'post-index',
+        body: {
+          settings: {
+            number_of_shards: 5,
+            number_of_replicas: 1,
+            analysis: {
+              analyzer: {
+                test_analyzer: {
+                  tokenizer: 'nori_t_mixed',
+                  filter: ['lowercase', 'my_syn']
+                }
+              },
+              tokenizer: {
+                nori_t_mixed: {
+                  type: 'nori_tokenizer',
+                  decompound_mode: 'mixed'
+                }
+              },
+              filter: {
+                my_syn: {
+                  type: 'synonym',
+                  synonyms: [
+                    '스택, stack',
+                    '큐, queue',
+                    '힙, heap',
+                    '해시, hash',
+                    '정렬, 소팅, 소트, sort, sorting',
+                    '완전탐색, 브루트포스, bruteforce',
+                    '탐욕법, 그리디, greedy',
+                    '동적계획법, 디피, dp, dynamic programming',
+                    '깊이 우선 탐색, dfs, depth first search',
+                    '너비 우선 탐색, bfs, breadth first search',
+                    '이분 탐색, binary search',
+                    '그래프, graph',
+                    '수학, mathematics',
+                    '구현, implementation',
+                    '시뮬레이션, simulation',
+                    '백트래킹, backtracking',
+                    '비트마스킹, 비트마스크, bitmask',
+                    '분할 정복, divide and conquer',
+                    '우선순위 큐, priority queue',
+                    '백준, boj, baekjoon',
+                    '프로그래머스, programmers'
+                  ]
+                }
+              }
+            }
+          },
+          mappings: {
+            properties: {
+              title: {
+                type: 'text',
+                analyzer: 'test_analyzer'
+              },
+              memo: {
+                type: 'text',
+                analyzer: 'test_analyzer'
+              }
+            }
+          }
+        }
+      })
     }
 
     const result = await Post.create({

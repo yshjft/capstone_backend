@@ -16,7 +16,7 @@ exports.writeReqValidator = (req, res, next) => {
 
 exports.readListReqValidator = (req, res, next) => {
   try {
-    const validate = makeValidator(path.join(__dirname, 'postStart.yml'))
+    const validate = makeValidator(path.join(__dirname, 'posts.yml'))
 
     if (!validate(req.query)) next(new Error(ajv.errorsText(validate.errors)))
     else next()

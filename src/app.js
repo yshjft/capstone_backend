@@ -45,9 +45,11 @@ const sessionOption = {
   cookie: {
     httpOnly: true,
     secure: false,
-    maxAge: 5000 * 60 * 60
+    maxAge: 3000 * 60 * 60
   },
-  store: new RedisStore({client: client})
+  store: new RedisStore({client: client}).on('error', (err) => {
+    console.log(err)
+  })
 }
 app.use(session(sessionOption))
 app.use(passport.initialize())

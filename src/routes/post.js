@@ -27,6 +27,7 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
     const isIndexExist = await esClient.indices.exists({index: 'post-index'})
 
     if (!isIndexExist) {
+      // 인덱싱 다시 해야한다.
       await esClient.indices.create({
         index: 'post-index',
         body: {
@@ -58,7 +59,7 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
                     '정렬, 소팅, 소트, sort, sorting',
                     '완전탐색, 브루트포스, bruteforce',
                     '탐욕법, 그리디, greedy',
-                    '동적계획법, 디피, dp, dynamic programming',
+                    '동적계획법, 디피, dp, 다이나믹 프로그래밍, dynamic programming',
                     '깊이 우선 탐색, dfs, depth first search',
                     '너비 우선 탐색, bfs, breadth first search',
                     '이분 탐색, binary search',
@@ -102,7 +103,6 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
       writer: id
     })
     const dbId = result.dataValues.id
-    console.log('id = ', dbId)
 
     // _doc 생성
     await esClient.create({
@@ -122,12 +122,28 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
   }
 })
 
-// 게시물 목록 보기
+// 게시물 조회
 router.get('/', readListReqValidator, async (req, res, next) => {
   const authCheckResult = authCheck(req)
-  const {start} = req.query
+  const {start, search} = req.query
 
   try {
+    if (search) {
+      const tmp = await esClient.search({
+        index: 'post-index',
+        body: {
+          query: {
+            multi_match: {
+              query: search,
+              fields: ['title^3', 'memo']
+            }
+          }
+        }
+      })
+
+      console.log('검색 시발 : ', tmp.hits.hits)
+    }
+
     const [posts] = await sequelize.query(`
       select
            posts.id,

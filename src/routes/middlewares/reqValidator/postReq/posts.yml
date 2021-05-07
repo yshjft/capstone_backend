@@ -2,6 +2,8 @@ type: object
 properties:
   start:
     type: string
+  search:
+    type: string
 required:
   - start
 additionalProperties: false

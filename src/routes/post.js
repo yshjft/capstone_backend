@@ -27,7 +27,7 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
     const isIndexExist = await esClient.indices.exists({index: 'post-index'})
 
     if (!isIndexExist) {
-      // 인덱싱 다시 해야한다.
+      // 인덱스 다시 만들어야 한다
       await esClient.indices.create({
         index: 'post-index',
         body: {
@@ -59,7 +59,7 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
                     '정렬, 소팅, 소트, sort, sorting',
                     '완전탐색, 브루트포스, bruteforce',
                     '탐욕법, 그리디, greedy',
-                    '동적계획법, 디피, dp, 다이나믹 프로그래밍, dynamic programming',
+                    '동적계획법, 디피, 다이나믹 프로그래밍, dp, dynamic programming',
                     '깊이 우선 탐색, dfs, depth first search',
                     '너비 우선 탐색, bfs, breadth first search',
                     '이분 탐색, binary search',
@@ -135,7 +135,7 @@ router.get('/', readListReqValidator, async (req, res, next) => {
           query: {
             multi_match: {
               query: search,
-              fields: ['title^3', 'memo']
+              fields: ['title^1.2', 'memo']
             }
           }
         }

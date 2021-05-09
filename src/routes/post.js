@@ -44,7 +44,7 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
               tokenizer: {
                 nori_t_mixed: {
                   type: 'nori_tokenizer',
-                  user_dictionary_rules: ['백트래킹'],
+                  user_dictionary_rules: ['그리디', '탐욕법', '동적 계획법', '백트래킹', '프로그래머스'],
                   decompound_mode: 'mixed'
                 }
               },

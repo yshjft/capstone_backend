@@ -57,7 +57,7 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
                     '힙, heap',
                     '해시, hash',
                     '정렬, 소팅, 소트, sort, sorting',
-                    '완전탐색, 브루트포스, bruteforce',
+                    '완전 탐색, 브루트 포스, bruteforce',
                     '탐욕법, 그리디, greedy',
                     '동적계획법, 디피, 다이나믹 프로그래밍, dp, dynamic programming',
                     '깊이 우선 탐색, dfs, depth first search',
@@ -268,6 +268,8 @@ router.put('/:id', isLoggedIn, editReqValidator, async (req, res, next) => {
   const {title, language, public, code, memo} = req.body
 
   try {
+    await esClient.ping({requestTimeout: 30000})
+
     await Post.update(
       {
         title,
@@ -278,6 +280,40 @@ router.put('/:id', isLoggedIn, editReqValidator, async (req, res, next) => {
       },
       {where: {id: postId}}
     )
+
+    // public false는 인덱싱을 안함 => _doc 존재하지 않는다
+    const isDocExist = await esClient.exists({index: 'post-index', id: postId})
+
+    if (public && isDocExist) {
+      // update
+      await esClient.update({
+        id: postId,
+        index: 'post-index',
+        body: {
+          doc: {
+            title: title,
+            memo: memo
+          }
+        }
+      })
+    }
+
+    if (public && !isDocExist) {
+      // create
+      await esClient.create({
+        id: postId,
+        index: 'post-index',
+        body: {
+          title: title,
+          memo: memo
+        }
+      })
+    }
+
+    if (!public && isDocExist) {
+      // delete
+      await esClient.delete({id: postId, index: 'post-index'})
+    }
 
     res.status(200).json({message: 'UPDATE SUCCESS'})
   } catch (error) {
@@ -291,6 +327,8 @@ router.delete('/:id', isLoggedIn, paramsIdValidator, async (req, res, next) => {
   const userId = req.user.id
 
   try {
+    await esClient.ping({requestTimeout: 30000})
+
     const [result] = await sequelize.query(`
       delete from posts
       where posts.id=${postId} and posts.writer=${userId}
@@ -298,9 +336,14 @@ router.delete('/:id', isLoggedIn, paramsIdValidator, async (req, res, next) => {
 
     if (result.affectedRows === 0) {
       // 조건에 맞는 게시물 없음
-      // 혹시나 다른 사람이 삭제할 수 없게 하기 위해
       res.status(404).json({message: 'NOT_FOUND'})
     } else {
+      // _doc 삭제
+      await esClient.delete({
+        id: postId,
+        index: 'post-index'
+      })
+
       res.status(200).json({message: 'DELETE_SUCCESS', deletedPost: postId})
     }
   } catch (error) {

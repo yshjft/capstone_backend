@@ -20,14 +20,13 @@ const esClient = new elasticsearch.Client({
 // 게시물 작성
 router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
   const {title, language, public, code, memo} = req.body
-  const {id} = req.user
+  const {id, nickName} = req.user
 
   try {
     await esClient.ping({requestTimeout: 30000})
     const isIndexExist = await esClient.indices.exists({index: 'post-index'})
 
     if (!isIndexExist) {
-      // 인덱스 다시 만들어야 한다
       await esClient.indices.create({
         index: 'post-index',
         body: {
@@ -36,7 +35,7 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
             number_of_replicas: 1,
             analysis: {
               analyzer: {
-                test_analyzer: {
+                post_analyzer: {
                   tokenizer: 'nori_t_mixed',
                   filter: ['lowercase', 'my_syn']
                 }
@@ -82,11 +81,11 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
             properties: {
               title: {
                 type: 'text',
-                analyzer: 'test_analyzer'
+                analyzer: 'post_analyzer'
               },
               memo: {
                 type: 'text',
-                analyzer: 'test_analyzer'
+                analyzer: 'post_analyzer'
               }
             }
           }
@@ -102,17 +101,19 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
       memo,
       writer: id
     })
+
     const dbId = result.dataValues.id
 
-    // _doc 생성
-    await esClient.create({
-      id: dbId,
-      index: 'post-index',
-      body: {
-        title: title,
-        memo: memo
-      }
-    })
+    if (public) {
+      await esClient.create({
+        id: dbId,
+        index: 'post-index',
+        body: {
+          title: title,
+          memo: memo
+        }
+      })
+    }
 
     res.status(201).json({
       message: 'POST_SUCCESS'
@@ -129,7 +130,7 @@ router.get('/', readListReqValidator, async (req, res, next) => {
 
   try {
     if (search) {
-      const tmp = await esClient.search({
+      const searchResult = await esClient.search({
         index: 'post-index',
         body: {
           query: {
@@ -137,11 +138,15 @@ router.get('/', readListReqValidator, async (req, res, next) => {
               query: search,
               fields: ['title^1.2', 'memo']
             }
-          }
+          },
+          from: start * 10,
+          size: 10
         }
       })
-
-      console.log('검색 시발 : ', tmp.hits.hits)
+      console.log('total: ', searchResult.hits.total.value)
+      console.log('검색 결과: ', searchResult.hits.hits)
+      const idList = searchResult.hits.hits.map((hit) => hit._id)
+      console.log(idList)
     }
 
     const [posts] = await sequelize.query(`
@@ -358,6 +363,8 @@ router.post('/like/:id', isLoggedIn, paramsIdValidator, async (req, res, next) =
   const createdAt = getNow()
 
   try {
+    await esClient.ping({requestTimeout: 30000})
+
     await sequelize.query(`
       insert into likes (userId, postId, createdAt, updatedAt)
       values ('${userId}', '${postId}', '${createdAt}', '${createdAt}')
@@ -385,6 +392,8 @@ router.delete('/like/:id', isLoggedIn, paramsIdValidator, async (req, res, next)
   const userId = req.user.id
 
   try {
+    await esClient.ping({requestTimeout: 30000})
+
     await sequelize.query(`delete from likes where userId='${userId}' and postId='${postId}'`)
     const [likeNum] = await sequelize.query(`
       select

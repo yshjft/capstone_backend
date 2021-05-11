@@ -125,10 +125,13 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
 
 // 게시물 조회
 router.get('/', readListReqValidator, async (req, res, next) => {
-  const authCheckResult = authCheck(req)
   const {start, search} = req.query
 
   try {
+    const authCheckResult = authCheck(req)
+    let data = []
+    let total = 0
+
     if (search) {
       const searchResult = await esClient.search({
         index: 'post-index',
@@ -143,35 +146,68 @@ router.get('/', readListReqValidator, async (req, res, next) => {
           size: 10
         }
       })
-      console.log('total: ', searchResult.hits.total.value)
-      console.log('검색 결과: ', searchResult.hits.hits)
-      const idList = searchResult.hits.hits.map((hit) => hit._id)
-      console.log(idList)
+
+      const {hits} = searchResult.hits
+      const hitIdList = hits.map((hit) => hit._id)
+      total = searchResult.hits.total.value
+
+      if (total !== 0) {
+        const scoreMap = new Map()
+        let whereCondition = 'where '
+
+        hits.forEach((hit, index) => {
+          if (index === hitIdList.length - 1) whereCondition += `posts.id = ${hit._id}`
+          else whereCondition += `posts.id = ${hit._id} or `
+
+          scoreMap.set(Number(hit._id), hit._score)
+        })
+
+        const [posts] = await sequelize.query(`
+          select posts.id,
+               posts.title,
+               posts.language,
+               posts.createdAt,
+               posts.updatedAt,
+               users.nickName as writer,
+               (select count(postId) from likes where likes.postId = posts.id) as likeNum
+          from posts
+          join users
+          on posts.writer = users.id
+          ${whereCondition}
+        `)
+
+        posts.forEach((post, index) => {
+          data.push(post)
+          data[index].score = scoreMap.get(post.id)
+        })
+
+        data.sort((a, b) => b.score - a.score)
+      }
+    } else {
+      const [posts] = await sequelize.query(`
+        select
+             posts.id,
+             posts.title,
+             posts.language,
+             posts.createdAt,
+             posts.updatedAt,
+             users.nickName as writer,
+             (select count(postId) from likes where likes.postId = posts.id) as likeNum
+        from posts
+        join users
+        on posts.writer = users.id
+        where posts.public = true
+        order by likeNum desc, posts.createdAt desc, posts.updatedAt desc
+        limit ${start * 10}, 10
+      `)
+
+      const [totalNum] = await sequelize.query(` select count(id) as total from posts where posts.public = true`)
+
+      data = posts
+      total = totalNum[0].total
     }
 
-    const [posts] = await sequelize.query(`
-      select
-           posts.id,
-           posts.title,
-           posts.language,
-           posts.createdAt,
-           posts.updatedAt,
-           users.nickName as writer,
-           (select count(postId) from likes where likes.postId = posts.id) as likeNum
-      from posts
-      join users
-      on posts.writer = users.id
-      where posts.public = true
-      order by likeNum desc, posts.createdAt desc, posts.updatedAt desc
-      limit ${start * 10}, 10
-    `)
-    const [total] = await sequelize.query(` select count(id) as total from posts where posts.public=true`)
-
-    return res.status(200).json({
-      auth: {...authCheckResult},
-      data: posts,
-      total: total[0].total
-    })
+    return res.status(200).json({auth: {...authCheckResult}, data, total})
   } catch (error) {
     return next(error)
   }

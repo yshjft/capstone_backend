@@ -6,8 +6,8 @@ const morgan = require('morgan')
 const hpp = require('hpp')
 const helmet = require('helmet')
 const passport = require('passport')
-const RedisStore = require('connect-redis')(session)
 const redis = require('redis')
+const RedisStore = require('connect-redis')(session)
 const {sequelize} = require('./models')
 const passportConfig = require('./passport')
 require('dotenv').config()
@@ -31,7 +31,7 @@ app.use(express.static(path.join(path.join(__dirname, 'public'))))
 app.use(express.json())
 app.use(express.urlencoded({extended: false}))
 app.use(cookieParser(process.env.COOKIE_SECRET))
-const client = redis.createClient({
+const redisClient = redis.createClient({
   host: process.env.REDIS_HOST,
   port: process.env.REDIS_PORT,
   password: process.env.REDIS_PASSWORD,
@@ -47,8 +47,12 @@ const sessionOption = {
     secure: false,
     maxAge: 3000 * 60 * 60
   },
-  store: new RedisStore({client: client}).on('error', (err) => {
-    console.log(err)
+  store: new RedisStore({
+    client: redisClient.on('error', (err) => {
+      // 에러의 원인 정확하게 파악하고 해결할 것
+      console.log('redis err: ', err)
+      console.log('redis err.stack: ', err.stack)
+    })
   })
 }
 app.use(session(sessionOption))

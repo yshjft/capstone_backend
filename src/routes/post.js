@@ -169,7 +169,9 @@ router.get('/', readListReqValidator, async (req, res, next) => {
                posts.createdAt,
                posts.updatedAt,
                users.nickName as writer,
-               (select count(postId) from likes where likes.postId = posts.id) as likeNum
+               (select count(postId) from likes where likes.postId = posts.id) as likeNum,
+               left(posts.memo, 50) as memo,
+               char_length(posts.memo) as memoLength
           from posts
           join users
           on posts.writer = users.id
@@ -192,7 +194,9 @@ router.get('/', readListReqValidator, async (req, res, next) => {
              posts.createdAt,
              posts.updatedAt,
              users.nickName as writer,
-             (select count(postId) from likes where likes.postId = posts.id) as likeNum
+             (select count(postId) from likes where likes.postId = posts.id) as likeNum,
+             left(posts.memo, 50) as memo,
+             char_length(posts.memo) as memoLength
         from posts
         join users
         on posts.writer = users.id

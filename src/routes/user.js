@@ -74,7 +74,9 @@ router.get('/:nickName', userReqValidator, async (req, res, next) => {
            posts.createdAt,
            posts.updatedAt,
            users.nickName as writer,
-           (select count(postId) from likes where likes.postId = posts.id) as likeNum
+           (select count(postId) from likes where likes.postId = posts.id) as likeNum,
+           left(posts.memo, 50) as memo,
+           char_length(posts.memo) as memoLength
          from posts
          join users on users.id=posts.writer
          where posts.writer=${userId}${condition}
@@ -99,7 +101,9 @@ router.get('/:nickName', userReqValidator, async (req, res, next) => {
             posts.createdAt,
             posts.updatedAt,
             users.nickName as writer,
-            (select count(postId) from likes where likes.postId = posts.id) as likeNum
+            (select count(postId) from likes where likes.postId = posts.id) as likeNum,
+            left(posts.memo, 50) as memo,
+            char_length(posts.memo) as memoLength
           from posts
                  join users on posts.writer=users.id
                  join likes on posts.id=likes.postId

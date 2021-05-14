@@ -37,6 +37,12 @@ const redisClient = redis.createClient({
   password: process.env.REDIS_PASSWORD,
   loggErrors: true
 })
+redisClient.on('error', (error) => {
+  // 에러의 원인 정확하게 파악하고 해결할 것
+  console.log('redis err: ', error)
+  console.log('redis err.stack: ', error.stack)
+})
+
 const sessionOption = {
   resave: false,
   saveUninitialized: false,
@@ -47,13 +53,7 @@ const sessionOption = {
     secure: false,
     maxAge: 3000 * 60 * 60
   },
-  store: new RedisStore({
-    client: redisClient.on('error', (err) => {
-      // 에러의 원인 정확하게 파악하고 해결할 것
-      console.log('redis err: ', err)
-      console.log('redis err.stack: ', err.stack)
-    })
-  })
+  store: new RedisStore({client: redisClient})
 }
 app.use(session(sessionOption))
 app.use(passport.initialize())

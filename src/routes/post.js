@@ -219,11 +219,12 @@ router.get('/', readListReqValidator, async (req, res, next) => {
 
 // 게시물 상세 조회
 router.get('/:id', readDetailReqValidator, async (req, res, next) => {
-  const authCheckResult = authCheck(req)
   const {id} = req.params
   const {writer} = req.query
 
   try {
+    const authCheckResult = authCheck(req)
+
     const [post] = await sequelize.query(`
       select 
            posts.id, 
@@ -330,7 +331,6 @@ router.put('/:id', isLoggedIn, editReqValidator, async (req, res, next) => {
     const isDocExist = await esClient.exists({index: 'post-index', id: postId})
 
     if (public && isDocExist) {
-      // update
       await esClient.update({
         id: postId,
         index: 'post-index',
@@ -344,7 +344,6 @@ router.put('/:id', isLoggedIn, editReqValidator, async (req, res, next) => {
     }
 
     if (public && !isDocExist) {
-      // create
       await esClient.create({
         id: postId,
         index: 'post-index',
@@ -356,7 +355,6 @@ router.put('/:id', isLoggedIn, editReqValidator, async (req, res, next) => {
     }
 
     if (!public && isDocExist) {
-      // delete
       await esClient.delete({id: postId, index: 'post-index'})
     }
 
@@ -380,14 +378,16 @@ router.delete('/:id', isLoggedIn, paramsIdValidator, async (req, res, next) => {
     `)
 
     if (result.affectedRows === 0) {
-      // 조건에 맞는 게시물 없음
       res.status(404).json({message: 'NOT_FOUND'})
     } else {
-      // _doc 삭제
-      await esClient.delete({
-        id: postId,
-        index: 'post-index'
-      })
+      const isDocExist = await esClient.exists({index: 'post-index', id: postId})
+
+      if (isDocExist) {
+        await esClient.delete({
+          id: postId,
+          index: 'post-index'
+        })
+      }
 
       res.status(200).json({message: 'DELETE_SUCCESS', deletedPost: postId})
     }

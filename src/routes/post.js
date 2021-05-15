@@ -20,7 +20,7 @@ const esClient = new elasticsearch.Client({
 // 게시물 작성
 router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
   const {title, language, public, code, memo} = req.body
-  const {id, nickName} = req.user
+  const {id} = req.user
 
   try {
     await esClient.ping({requestTimeout: 30000})
@@ -36,14 +36,32 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
             analysis: {
               analyzer: {
                 post_analyzer: {
+                  char_filter: ['c_char_filter'],
                   tokenizer: 'nori_t_mixed',
                   filter: ['lowercase', 'my_syn']
+                }
+              },
+              char_filter: {
+                c_char_filter: {
+                  type: 'mapping',
+                  mappings: ['+ => p', '# => sharp']
                 }
               },
               tokenizer: {
                 nori_t_mixed: {
                   type: 'nori_tokenizer',
-                  user_dictionary_rules: ['그리디', '탐욕법', '계획법', '백트래킹', '프로그래머스'],
+                  user_dictionary_rules: [
+                    '그리디',
+                    '탐욕법',
+                    '계획법',
+                    '백트래킹',
+                    '프로그래머스',
+                    'c언어',
+                    '씨언어',
+                    '씨플플',
+                    'c샵',
+                    '자바스크립트'
+                  ],
                   decompound_mode: 'mixed'
                 }
               },
@@ -71,7 +89,16 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
                     '분할 정복, divide and conquer',
                     '우선순위 큐, priority queue',
                     '백준, boj, baekjoon',
-                    '프로그래머스, programmers'
+                    '프로그래머스, programmers',
+                    '씨언어, c언어, c',
+                    '씨샵, c샵, csharp',
+                    '씨플플, cpp',
+                    '파이썬, python',
+                    '자바, java',
+                    '자바스크립트, js, javascript',
+                    '루비, ruby',
+                    '코틀린, kotlin',
+                    '스위프트, swift'
                   ]
                 }
               }
@@ -86,6 +113,13 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
               memo: {
                 type: 'text',
                 analyzer: 'post_analyzer'
+              },
+              language: {
+                type: 'text',
+                analyzer: 'post_analyzer'
+              },
+              writer: {
+                type: 'integer'
               }
             }
           }
@@ -109,15 +143,15 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
         id: dbId,
         index: 'post-index',
         body: {
+          writer: id,
           title: title,
+          language: language,
           memo: memo
         }
       })
     }
 
-    res.status(201).json({
-      message: 'POST_SUCCESS'
-    })
+    res.status(201).json({message: 'POST_SUCCESS'})
   } catch (error) {
     return next(error)
   }
@@ -139,7 +173,7 @@ router.get('/', readListReqValidator, async (req, res, next) => {
           query: {
             multi_match: {
               query: search,
-              fields: ['title^1.2', 'memo']
+              fields: ['title^1.2', 'language', 'memo']
             }
           },
           from: start * 10,
@@ -150,6 +184,8 @@ router.get('/', readListReqValidator, async (req, res, next) => {
       const {hits} = searchResult.hits
       const hitIdList = hits.map((hit) => hit._id)
       total = searchResult.hits.total.value
+
+      console.log('검색 결과 = ', hits)
 
       if (total !== 0) {
         const scoreMap = new Map()
@@ -337,6 +373,7 @@ router.put('/:id', isLoggedIn, editReqValidator, async (req, res, next) => {
         body: {
           doc: {
             title: title,
+            language: language,
             memo: memo
           }
         }
@@ -344,11 +381,15 @@ router.put('/:id', isLoggedIn, editReqValidator, async (req, res, next) => {
     }
 
     if (public && !isDocExist) {
+      const [writer] = await sequelize.query(`select writer from posts where id=${postId}`)
+
       await esClient.create({
         id: postId,
         index: 'post-index',
         body: {
+          writer: writer[0].writer,
           title: title,
+          language: language,
           memo: memo
         }
       })
@@ -403,8 +444,6 @@ router.post('/like/:id', isLoggedIn, paramsIdValidator, async (req, res, next) =
   const createdAt = getNow()
 
   try {
-    await esClient.ping({requestTimeout: 30000})
-
     await sequelize.query(`
       insert into likes (userId, postId, createdAt, updatedAt)
       values ('${userId}', '${postId}', '${createdAt}', '${createdAt}')
@@ -432,8 +471,6 @@ router.delete('/like/:id', isLoggedIn, paramsIdValidator, async (req, res, next)
   const userId = req.user.id
 
   try {
-    await esClient.ping({requestTimeout: 30000})
-
     await sequelize.query(`delete from likes where userId='${userId}' and postId='${postId}'`)
     const [likeNum] = await sequelize.query(`
       select

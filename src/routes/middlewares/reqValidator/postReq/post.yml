@@ -15,7 +15,6 @@ properties:
     - 'ruby'
     - 'kotlin'
     - 'swift'
-    - 'golang'
   public:
     type: boolean
   code:

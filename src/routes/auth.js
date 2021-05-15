@@ -1,5 +1,6 @@
 const express = require('express')
 const router = express.Router()
+const elasticsearch = require('elasticsearch')
 const {User, sequelize} = require('../models')
 const bcrypt = require('bcryptjs')
 const passport = require('passport')
@@ -12,6 +13,10 @@ const {
   infoEditReqValidator
 } = require('./middlewares/reqValidator/authReq')
 const generatePassword = require('./lib/generatePassword')
+
+const esClient = new elasticsearch.Client({
+  hosts: ['http://localhost:9200']
+})
 
 async function checkUnique(type, value) {
   let query = 'select users.id from users '
@@ -194,10 +199,23 @@ router.delete('/quit', isLoggedIn, async (req, res, next) => {
   const userId = req.user.id
 
   try {
+    await esClient.ping({requestTimeout: 30000})
+
     await sequelize.query(`
       delete from users 
       where users.id=${userId}
     `)
+
+    await esClient.deleteByQuery({
+      index: 'post-index',
+      body: {
+        query: {
+          match: {
+            writer: userId
+          }
+        }
+      }
+    })
 
     return res.status(200).json({message: 'QUIT_SUCCESS'})
   } catch (error) {

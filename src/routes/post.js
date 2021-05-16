@@ -12,6 +12,8 @@ const {
   editReqValidator,
   readListReqValidator
 } = require('./middlewares/reqValidator/postReq')
+const url = require('url')
+const qs = require('querystring')
 
 const esClient = new elasticsearch.Client({
   hosts: ['http://localhost:9200']
@@ -36,13 +38,13 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
             analysis: {
               analyzer: {
                 post_analyzer: {
-                  char_filter: ['c_char_filter'],
+                  char_filter: ['my_char_filter'],
                   tokenizer: 'nori_t_mixed',
                   filter: ['lowercase', 'my_syn']
                 }
               },
               char_filter: {
-                c_char_filter: {
+                my_char_filter: {
                   type: 'mapping',
                   mappings: ['+ => p', '# => sharp']
                 }
@@ -59,7 +61,9 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
                     'c언어',
                     '씨언어',
                     '씨플플',
+                    'c++',
                     'c샵',
+                    '씨샵',
                     '자바스크립트'
                   ],
                   decompound_mode: 'mixed'
@@ -91,8 +95,8 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
                     '백준, boj, baekjoon',
                     '프로그래머스, programmers',
                     '씨언어, c언어, c',
-                    '씨샵, c샵, csharp',
-                    '씨플플, cpp',
+                    '씨샵, c샵, csharp, c#',
+                    '씨플플, cpp, c++',
                     '파이썬, python',
                     '자바, java',
                     '자바스크립트, js, javascript',
@@ -166,13 +170,14 @@ router.get('/', readListReqValidator, async (req, res, next) => {
     let data = []
     let total = 0
 
+    console.log(req.url)
     if (search) {
       const searchResult = await esClient.search({
         index: 'post-index',
         body: {
           query: {
             multi_match: {
-              query: search,
+              query: qs.parse(url.parse(req.url.replace(/\+/g, '%2B')).query).search,
               fields: ['title^1.2', 'language', 'memo']
             }
           },
@@ -180,12 +185,11 @@ router.get('/', readListReqValidator, async (req, res, next) => {
           size: 10
         }
       })
+      console.log(searchResult)
 
       const {hits} = searchResult.hits
       const hitIdList = hits.map((hit) => hit._id)
       total = searchResult.hits.total.value
-
-      console.log('검색 결과 = ', hits)
 
       if (total !== 0) {
         const scoreMap = new Map()

@@ -170,14 +170,13 @@ router.get('/', readListReqValidator, async (req, res, next) => {
     let data = []
     let total = 0
 
-    console.log(req.url)
     if (search) {
       const searchResult = await esClient.search({
         index: 'post-index',
         body: {
           query: {
             multi_match: {
-              query: qs.parse(url.parse(req.url.replace(/\+/g, '%2B')).query).search,
+              query: search,
               fields: ['title^1.2', 'language', 'memo']
             }
           },
@@ -185,7 +184,6 @@ router.get('/', readListReqValidator, async (req, res, next) => {
           size: 10
         }
       })
-      console.log(searchResult)
 
       const {hits} = searchResult.hits
       const hitIdList = hits.map((hit) => hit._id)

@@ -38,7 +38,6 @@ const redisClient = redis.createClient({
   loggErrors: true
 })
 redisClient.on('error', (error) => {
-  // 에러의 원인 정확하게 파악하고 해결할 것
   console.log('redis err: ', error)
   console.log('redis err.stack: ', error.stack)
 })

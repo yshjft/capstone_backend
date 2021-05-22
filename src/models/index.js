@@ -3,7 +3,7 @@ const User = require('./user')
 const Post = require('./post')
 
 const env = process.env.NODE_ENV || 'development'
-const config = require(__dirname + '/../config/config.js')[env]
+const config = require('../config/config')[env]
 const db = {}
 
 const sequelize = new Sequelize(config.database, config.username, config.password, config)

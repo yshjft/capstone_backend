@@ -13,9 +13,10 @@ const {
   infoEditReqValidator
 } = require('./middlewares/reqValidator/authReq')
 const generatePassword = require('./lib/generatePassword')
+require('dotenv').config()
 
 const esClient = new elasticsearch.Client({
-  hosts: ['http://localhost:9200']
+  hosts: [`${process.env.NODE_ENV === 'production' ? process.env.ES_PROD_URL : process.env.ES_DEV_URL}`]
 })
 
 async function checkUnique(type, value) {

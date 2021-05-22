@@ -12,11 +12,10 @@ const {
   editReqValidator,
   readListReqValidator
 } = require('./middlewares/reqValidator/postReq')
-const url = require('url')
-const qs = require('querystring')
+require('dotenv').config()
 
 const esClient = new elasticsearch.Client({
-  hosts: ['http://localhost:9200']
+  hosts: [`${process.env.NODE_ENV === 'production' ? process.env.ES_PROD_URL : process.env.ES_DEV_URL}`]
 })
 
 // 게시물 작성

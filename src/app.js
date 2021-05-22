@@ -20,7 +20,7 @@ passportConfig(passport)
 
 app.set('PORT', 5000)
 
-if (process.env.NODE_ENV) {
+if (process.env.NODE_ENV === 'production') {
   app.use(morgan('combined'))
   app.use(hpp())
   app.use(helmet())

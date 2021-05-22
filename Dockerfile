@@ -9,4 +9,4 @@ RUN npm install -g pm2 cross-env sequelize-cli
 
 COPY ./ ./
 
-CMD ["sudo", "npm", "start"]
+CMD ["npm", "start"]

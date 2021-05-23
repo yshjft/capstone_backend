@@ -170,36 +170,40 @@ router.get('/', readListReqValidator, async (req, res, next) => {
     let total = 0
 
     if (search) {
-      const searchResult = await esClient.search({
-        index: 'post-index',
-        body: {
-          query: {
-            multi_match: {
-              query: search,
-              fields: ['title^1.2', 'language', 'memo']
-            }
-          },
-          from: start * 10,
-          size: 10
-        }
-      })
+      await esClient.ping({requestTimeout: 30000})
 
-      const {hits} = searchResult.hits
-      const hitIdList = hits.map((hit) => hit._id)
-      total = searchResult.hits.total.value
-
-      if (total !== 0) {
-        const scoreMap = new Map()
-        let whereCondition = 'where '
-
-        hits.forEach((hit, index) => {
-          if (index === hitIdList.length - 1) whereCondition += `posts.id = ${hit._id}`
-          else whereCondition += `posts.id = ${hit._id} or `
-
-          scoreMap.set(Number(hit._id), hit._score)
+      const isIndexExist = await esClient.indices.exists({index: 'post-index'})
+      if(isIndexExist){
+        const searchResult = await esClient.search({
+          index: 'post-index',
+          body: {
+            query: {
+              multi_match: {
+                query: search,
+                fields: ['title^1.2', 'language', 'memo']
+              }
+            },
+            from: start * 10,
+            size: 10
+          }
         })
 
-        const [posts] = await sequelize.query(`
+        const {hits} = searchResult.hits
+        const hitIdList = hits.map((hit) => hit._id)
+        total = searchResult.hits.total.value
+
+        if (total !== 0) {
+          const scoreMap = new Map()
+          let whereCondition = 'where '
+
+          hits.forEach((hit, index) => {
+            if (index === hitIdList.length - 1) whereCondition += `posts.id = ${hit._id}`
+            else whereCondition += `posts.id = ${hit._id} or `
+
+            scoreMap.set(Number(hit._id), hit._score)
+          })
+
+          const [posts] = await sequelize.query(`
           select posts.id,
                posts.title,
                posts.language,
@@ -215,12 +219,13 @@ router.get('/', readListReqValidator, async (req, res, next) => {
           ${whereCondition}
         `)
 
-        posts.forEach((post, index) => {
-          data.push(post)
-          data[index].score = scoreMap.get(post.id)
-        })
+          posts.forEach((post, index) => {
+            data.push(post)
+            data[index].score = scoreMap.get(post.id)
+          })
 
-        data.sort((a, b) => b.score - a.score)
+          data.sort((a, b) => b.score - a.score)
+        }
       }
     } else {
       const [posts] = await sequelize.query(`

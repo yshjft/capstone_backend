@@ -10,4 +10,4 @@
 https://github.com/yshjft/capstone_frontend
 
 ### 배포 주소
-http://3.36.74.34
+http://mjualgohub.tk

@@ -5,6 +5,11 @@
 * MySql
 * Redis
 * Elasticsearch(with nori)
+* Docker
+* nginx 
+* AWS EC2
+* AWS RDS
+
 
 ### 프론트엔드 레파지토리
 https://github.com/yshjft/capstone_frontend

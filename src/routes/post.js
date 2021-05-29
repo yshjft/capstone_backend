@@ -162,7 +162,7 @@ router.post('/', isLoggedIn, writeReqValidator, async (req, res, next) => {
 
 // 게시물 조회
 router.get('/', readListReqValidator, async (req, res, next) => {
-  const {start, search} = req.query
+  const {start, search, langFilter} = req.query
 
   try {
     const authCheckResult = authCheck(req)
@@ -174,19 +174,48 @@ router.get('/', readListReqValidator, async (req, res, next) => {
 
       const isIndexExist = await esClient.indices.exists({index: 'post-index'})
       if(isIndexExist){
-        const searchResult = await esClient.search({
-          index: 'post-index',
-          body: {
-            query: {
-              multi_match: {
-                query: search,
-                fields: ['title^1.2', 'language', 'memo']
-              }
-            },
-            from: start * 10,
-            size: 10
-          }
-        })
+        let searchResult = {}
+
+        if(langFilter){
+          searchResult = await esClient.search({
+            index: 'post-index',
+            body: {
+              query: {
+                bool: {
+                  must: [
+                    {
+                      multi_match: {
+                        query: search,
+                        fields: ['title^1.2', 'memo']
+                      }
+                    },
+                    {
+                      match: {
+                        language: langFilter
+                      }
+                    }
+                  ]
+                }
+              },
+              from: start * 10,
+              size: 10
+            }
+          })
+        }else{
+          searchResult = await esClient.search({
+            index: 'post-index',
+            body: {
+              query: {
+                multi_match: {
+                  query: search,
+                  fields: ['title^1.2', 'memo']
+                }
+              },
+              from: start * 10,
+              size: 10
+            }
+          })
+        }
 
         const {hits} = searchResult.hits
         const hitIdList = hits.map((hit) => hit._id)
@@ -228,6 +257,12 @@ router.get('/', readListReqValidator, async (req, res, next) => {
         }
       }
     } else {
+      let whereCondition = `where posts.public = true`
+
+      if(langFilter){
+        whereCondition += ' and (' + langFilter.split(',').map((lang, langIndex) => `posts.language = '${lang}'`).join(' or ') + ')'
+      }
+
       const [posts] = await sequelize.query(`
         select
              posts.id,
@@ -242,12 +277,12 @@ router.get('/', readListReqValidator, async (req, res, next) => {
         from posts
         join users
         on posts.writer = users.id
-        where posts.public = true
+        ${whereCondition}
         order by likeNum desc, posts.createdAt desc, posts.updatedAt desc
         limit ${start * 10}, 10
       `)
 
-      const [totalNum] = await sequelize.query(` select count(id) as total from posts where posts.public = true`)
+      const [totalNum] = await sequelize.query(` select count(id) as total from posts ${whereCondition}`)
 
       data = posts
       total = totalNum[0].total

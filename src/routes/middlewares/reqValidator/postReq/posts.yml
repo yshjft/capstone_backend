@@ -4,6 +4,8 @@ properties:
     type: string
   search:
     type: string
+  langFilter:
+    type: string
 required:
   - start
 additionalProperties: false

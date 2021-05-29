@@ -64,7 +64,7 @@ router.get('/:nickName', userReqValidator, async (req, res, next) => {
 
     switch (tab) {
       case 'posts':
-        const condition = isLoggedIn ? `` : ` and posts.public=true`
+        const condition = isLoggedIn && authCheckResult.id === userId ? `` : ` and posts.public=true`
         const [posts] = await sequelize.query(`
          select
            posts.id,

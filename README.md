@@ -4,7 +4,7 @@
 1. Node.js(Express.js)    
 
  
-2. 데이터베이스(MySql, Redis)
+2. 데이터베이스(MySql, Redis)          
     Redis의 경우 로그인을 할 떄 사용되며 세션 정보(userId)를 저장할 때 사용하게 되었습니다. userId는 자주 조회되는 정보이기 때문에 인메모리 데이터베이스인 Redis를 사용하였습니다.   
 
 
@@ -33,7 +33,7 @@
 
 
 ### 프론트엔드 레파지토리    
-실제 프로젝트 모습은 아래 링크를 통해 확인하 실 수 있습니다.
+실제 프로젝트 모습은 아래 링크를 통해 확인하 실 수 있습니다.           
 https://github.com/yshjft/capstone_frontend
 
 ### 배포 주소

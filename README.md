@@ -10,7 +10,8 @@
 
 3. ElasticSearch + nori(한글 형태소 분석기)
     * 빠른 검색을 구현하기 위해 역 인덱스(inverted index)를 이용하는 ElasticSearch를 사용하였습니다.     
-    * 좀더 정확한 검색을 위해 유사어를 설정하였습니다.(ex.[백준, baekjoon, boj], [dfs, depth first search, 깊이 우선 타색], ...)
+    * 좀더 정확한 검색을 위해 유사어를 설정하였습니다.     
+      (ex.[백준, baekjoon, boj], [dfs, depth first search, 깊이 우선 타색], ...)
     * 게시물의 제목(title)과 메모(memo)에 대하여 검색을 진행하였으며 사용자들이 검색이 제목에 좀 더 초점이 맞춰 있을 것으로 생각되어 제목(title)에 가중치를 적용하였습니다.   
 
 
@@ -31,10 +32,11 @@
    * freenom에서 받은 도메인 이름을 적용하기 위해 Route 53를 사용하였습니다.
 
 
-
+    
 ### 프론트엔드 레파지토리    
 실제 프로젝트 모습은 아래 링크를 통해 확인하 실 수 있습니다.           
 https://github.com/yshjft/capstone_frontend
+
 
 ### 배포 주소
 http://mjualgohub.tk

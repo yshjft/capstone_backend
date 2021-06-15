@@ -11,7 +11,7 @@
 3. ElasticSearch + nori(한글 형태소 분석기)
     * 빠른 검색을 구현하기 위해 역 인덱스(inverted index)를 이용하는 ElasticSearch를 사용하였습니다.     
     * 좀더 정확한 검색을 위해 유사어를 설정하였습니다.     
-      (ex.[백준, baekjoon, boj], [dfs, depth first search, 깊이 우선 타색], ...)
+      (ex.[백준, baekjoon, boj], [dfs, depth first search, 깊이 우선 탐색], ...)
     * 게시물의 제목(title)과 메모(memo)에 대하여 검색을 진행하였으며 사용자들이 검색이 제목에 좀 더 초점이 맞춰 있을 것으로 생각되어 제목(title)에 가중치를 적용하였습니다.   
 
 

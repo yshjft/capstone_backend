@@ -22,7 +22,8 @@
 
 5. nginx
    * 하나의 인스턴스에서 frontend와 backend를 분리하기 위해 사용하였습니다.
-   * reverse proxy를 이용하여 보안을 높여주기 위해서 사용하였습니다. 
+   * reverse proxy를 이용하여 보안을 높여주기 위해서 사용하였습니다.
+   * frontend 배포를 위해서 사용하였습니다. 개발 환경에서는 React CRA의 dev 서버를 사용하였지만 배포 환경에서는 nginx를 이용하여 정적파일을 제공합니다.  
     
     
 6. AWS(EC2, RDS, Route 53)

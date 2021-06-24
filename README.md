@@ -40,4 +40,6 @@ https://github.com/yshjft/capstone_frontend
 
 
 ### 배포 주소
-http://mjualgohub.tk
+~~http://mjualgohub.tk~~    
+현재 인스턴스 삭제            
+(6월 24일 부터 사용 불가)
